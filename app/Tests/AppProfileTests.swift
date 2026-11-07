@@ -6,13 +6,13 @@ final class AppProfileTests: XCTestCase {
     func testTheDefaultProfileLivesAtTheAppsOwnDirectory() {
         let p = AppProfile.resolve(env: [:], appSupport: support)!
         XCTAssertEqual(p.name, "default")
-        XCTAssertEqual(p.directory.path, "/Users/u/Library/Application Support/ai.xpromptvs.development")
+        XCTAssertEqual(p.directory.path, "/Users/u/Library/Application Support/\(AppProfile.folder)")
     }
     func testANamedProfileIsIsolatedAndStable() {
         let a = AppProfile.resolve(env: ["RDEV_APP_PROFILE": "check-1"], appSupport: support)!
         let b = AppProfile.resolve(env: ["RDEV_APP_PROFILE": "check-1"], appSupport: support)!
         let c = AppProfile.resolve(env: ["RDEV_APP_PROFILE": "check-2"], appSupport: support)!
-        XCTAssertEqual(a.directory.path, "/Users/u/Library/Application Support/ai.xpromptvs.development/profiles/check-1")
+        XCTAssertEqual(a.directory.path, "/Users/u/Library/Application Support/\(AppProfile.folder)/profiles/check-1")
         XCTAssertEqual(a.dataStoreID, b.dataStoreID)
         XCTAssertNotEqual(a.dataStoreID, c.dataStoreID)
         XCTAssertNotEqual(a.dataStoreID, AppProfile.resolve(env: [:], appSupport: support)!.dataStoreID)
@@ -24,9 +24,9 @@ final class AppProfileTests: XCTestCase {
         let caches = URL(fileURLWithPath: "/Users/u/Library/Caches")
         let d = AppProfile.resolve(env: [:], appSupport: support)!
         let c = AppProfile.resolve(env: ["RDEV_APP_PROFILE": "check-1"], appSupport: support)!
-        XCTAssertEqual(d.pasteDirectory(caches: caches).path, "/Users/u/Library/Caches/ai.xpromptvs.development/default/Pastes")
-        XCTAssertEqual(c.pasteDirectory(caches: caches).path, "/Users/u/Library/Caches/ai.xpromptvs.development/check-1/Pastes")
-        XCTAssertTrue(d.pasteDirectory.path.hasSuffix("/Library/Caches/ai.xpromptvs.development/default/Pastes"), d.pasteDirectory.path)
+        XCTAssertEqual(d.pasteDirectory(caches: caches).path, "/Users/u/Library/Caches/\(AppProfile.folder)/default/Pastes")
+        XCTAssertEqual(c.pasteDirectory(caches: caches).path, "/Users/u/Library/Caches/\(AppProfile.folder)/check-1/Pastes")
+        XCTAssertTrue(d.pasteDirectory.path.hasSuffix("/Library/Caches/\(AppProfile.folder)/default/Pastes"), d.pasteDirectory.path)
         XCTAssertFalse(d.pasteDirectory.path.contains(" "), d.pasteDirectory.path)
     }
     /// The zips a folder paste makes (`LocalPastes`): beside the paste folder, per profile for the same reason —
@@ -35,16 +35,16 @@ final class AppProfileTests: XCTestCase {
         let caches = URL(fileURLWithPath: "/Users/u/Library/Caches")
         let d = AppProfile.resolve(env: [:], appSupport: URL(fileURLWithPath: "/x"))!
         let c = AppProfile.resolve(env: ["RDEV_APP_PROFILE": "check-1"], appSupport: URL(fileURLWithPath: "/x"))!
-        XCTAssertEqual(d.archiveDirectory(caches: caches).path, "/Users/u/Library/Caches/ai.xpromptvs.development/default/PasteArchives")
-        XCTAssertEqual(c.archiveDirectory(caches: caches).path, "/Users/u/Library/Caches/ai.xpromptvs.development/check-1/PasteArchives")
+        XCTAssertEqual(d.archiveDirectory(caches: caches).path, "/Users/u/Library/Caches/\(AppProfile.folder)/default/PasteArchives")
+        XCTAssertEqual(c.archiveDirectory(caches: caches).path, "/Users/u/Library/Caches/\(AppProfile.folder)/check-1/PasteArchives")
     }
 
     func testStagingIdentityStoreIsRelativeToApplicationSupport() {
         let staging=AppProfile.resolve(env:[:],appSupport:support,channel:"staging")!
-        XCTAssertEqual(staging.identityStoreName,"ai.xpromptvs.development/channels/staging/HostIdentity")
+        XCTAssertEqual(staging.identityStoreName,"\(AppProfile.folder)/channels/staging/HostIdentity")
         let named=AppProfile.resolve(env:["RDEV_APP_PROFILE":"test"],appSupport:support,channel:"staging")!
-        XCTAssertEqual(named.identityStoreName,"ai.xpromptvs.development/channels/staging/profiles/test/HostIdentity")
-        XCTAssertEqual(AppProfile.resolve(env:[:],appSupport:support,channel:"public")!.identityStoreName,"ai.xpromptvs.development/HostIdentity")
+        XCTAssertEqual(named.identityStoreName,"\(AppProfile.folder)/channels/staging/profiles/test/HostIdentity")
+        XCTAssertEqual(AppProfile.resolve(env:[:],appSupport:support,channel:"public")!.identityStoreName, AppDistribution.official ? nil : "\(AppProfile.folder)/HostIdentity")
     }
     func testPublicNamesCannotCollideWithStagingStorageOrActivation() {
         let named=AppProfile.resolve(env:["RDEV_APP_PROFILE":"staging-default"],appSupport:support,channel:"public")!

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDisplayName</key><string>Xpromptvs</string>
+	<!-- LOAD-BEARING for Gatekeeper (2026-10-06): rules_apple writes no package type, so `PkgInfo` read
+	     `????????` and a NOTARIZED, stapled bundle was "rejected (the code is valid but does not seem to
+	     be an app)" by spctl's execute assessment — what a downloaded app's first launch asks. -->
+	<key>CFBundlePackageType</key><string>APPL</string>
+	<!-- desktop/build/icon.icns, copied in by scripts/assemble-app.sh. -->
+	<key>CFBundleIconFile</key><string>icon</string>
+	<key>CFBundleShortVersionString</key><string>0.1.0</string>
+	<key>CFBundleVersion</key><string>1</string>
+	<key>LSMinimumSystemVersion</key><string>26.0</string>
+	<key>LSApplicationCategoryType</key><string>public.app-category.developer-tools</string>
+	<key>NSPrincipalClass</key><string>NSApplication</string>
+	<key>NSCameraUsageDescription</key><string>Xpromptvs uses the camera only to scan a pairing QR code.</string>
+	<!-- Reserved, unwired — claiming a scheme costs nothing now and is awkward after a release. -->
+	<key>CFBundleURLTypes</key>
+	<array><dict>
+		<key>CFBundleURLName</key><string>ai.xpromptvs.app</string>
+		<key>CFBundleURLSchemes</key><array><string>rdev</string></array>
+	</dict></array>
+</dict>
+</plist>

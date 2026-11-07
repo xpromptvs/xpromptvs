@@ -3,6 +3,11 @@
 set -eu
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 cd "$ROOT"
+if [ "${RDEV_APP_DISTRIBUTION:-source}" = official ]; then
+  [ "${1:-dev}" = release ] || { echo 'Official distribution requires release mode' >&2; exit 1; }
+  exec sh "$ROOT/scripts/assemble-official-app.sh" release
+fi
+[ "${RDEV_APP_DISTRIBUTION:-source}" = source ] || { echo 'Unknown app distribution' >&2; exit 1; }
 MODE=${1:-dev}
 case "$MODE" in dev) OPT="";; release) OPT="-c opt";; *) echo 'Expected dev or release' >&2; exit 1;; esac
 [ "${RDEV_PRODUCT_PROFILE:-publication}" = publication ] || { echo 'This edition builds the publication profile' >&2; exit 1; }

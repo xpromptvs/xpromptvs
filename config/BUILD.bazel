@@ -1,3 +1,4 @@
+load(":distribution.bzl", "app_distribution")
 load(":product-profile.bzl", "product_profile")
 
 product_profile(name = "profile", build_setting_default = "development", visibility = ["//visibility:public"])
@@ -15,5 +16,17 @@ genrule(
         ":publication": "publication",
         "//conditions:default": "development",
     }) + " $@",
+    visibility = ["//visibility:public"],
+)
+
+app_distribution(name = "distribution", build_setting_default = "source", visibility = ["//visibility:public"])
+config_setting(name = "official", flag_values = {":distribution": "official"}, visibility = ["//visibility:public"])
+genrule(
+    name = "native_app_distribution",
+    outs = ["AppDistribution.swift"],
+    cmd = "echo 'public enum AppDistribution { public static let official = " + select({
+        ":official": "true",
+        "//conditions:default": "false",
+    }) + "; }' > $@",
     visibility = ["//visibility:public"],
 )

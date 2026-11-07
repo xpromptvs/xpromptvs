@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- The app's entitlements (docs/desktop-app.md, "Signing and notarization"). Signed in by rules_apple, kept by
+     scripts/assemble-app.sh's re-sign. A DEV build adds get-task-allow (app/BUILD.bazel). -->
+<plist version="1.0">
+<dict>
+	<!-- The App ID and team the provisioning profile (app/Xpromptvs.provisionprofile) grants: a restricted
+	     entitlement below is honoured only when these match it, or macOS refuses to launch the app. -->
+	<key>com.apple.application-identifier</key><string>$(AppIdentifierPrefix)$(CFBundleIdentifier)</string>
+	<key>com.apple.developer.team-identifier</key><string>2543RQRGJ8</string>
+	<!-- In-app passkeys for xpromptvs.ai (§10.1's rp_id): the Worker's /.well-known/apple-app-site-association
+	     names this App ID. RESTRICTED — the reason the profile exists. -->
+	<key>com.apple.developer.associated-domains</key><array><string>webcredentials:xpromptvs.ai</string><string>webcredentials:staging.xpromptvs.ai</string></array>
+	<!-- The hardened runtime denies the camera without it, and the pairing QR scanner (getUserMedia in the
+	     client window) uses it. -->
+	<key>com.apple.security.device.camera</key><true/>
+</dict>
+</plist>

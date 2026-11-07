@@ -16,7 +16,7 @@ public struct AppProfile: Equatable, Sendable {
     /// so a person finds them by the app's name — `dev.rdev.app` until the bundle id changed (2026-10-06, asked
     /// for; nothing moved over). §10.1's keys are NOT here: they live under `dev.rdev.host` (`FileRecordStore`),
     /// which no bundle id names, so changing this unenrols nothing.
-    public static let folder = "ai.xpromptvs.development"
+    public static let folder = AppDistribution.official ? "ai.xpromptvs.app" : "ai.xpromptvs.development"
 
     /// THE PROFILE'S PASTE FOLDER (docs/superpowers/specs/2026-10-01-paste-and-drop-design.md §6):
     /// `<caches>/<folder>/<name>/Pastes`. Per profile, because a launch EMPTIES it and must never empty
@@ -47,13 +47,13 @@ public struct AppProfile: Equatable, Sendable {
         let publicBase = appSupport.appendingPathComponent(folder)
         let base = channel == "public" ? publicBase : publicBase.appendingPathComponent("channels/staging")
         guard let name = env["RDEV_APP_PROFILE"] else {
-            return AppProfile(name: prefix + "default", directory: base, dataStoreID: uuid(prefix + "default"), identityStoreName: folder + (channel == "staging" ? "/channels/staging/HostIdentity" : "/HostIdentity"))
+            return AppProfile(name: prefix + "default", directory: base, dataStoreID: uuid(prefix + "default"), identityStoreName: channel == "staging" ? folder + "/channels/staging/HostIdentity" : (AppDistribution.official ? nil : folder + "/HostIdentity"))
         }
         let allowed = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-")
         guard (1...64).contains(name.count), name != ".", name != "..",
               name.unicodeScalars.allSatisfy(allowed.contains) else { return nil }
         return AppProfile(name: prefix + name, directory: base.appendingPathComponent("profiles").appendingPathComponent(name),
-                          dataStoreID: uuid(prefix + name), identityStoreName: folder + (channel == "staging" ? "/channels/staging" : "") + "/profiles/" + name + "/HostIdentity")
+                          dataStoreID: uuid(prefix + name), identityStoreName: channel == "staging" ? folder + "/channels/staging/profiles/" + name + "/HostIdentity" : (AppDistribution.official ? nil : folder + "/profiles/" + name + "/HostIdentity"))
     }
 
     private static func uuid(_ name: String) -> UUID {

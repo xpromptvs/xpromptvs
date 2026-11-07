@@ -9,7 +9,7 @@ config_setting(
 swift_library(
     name = "ShellstormCore",
     visibility = ["//visibility:public"],
-    srcs = glob(["Core/*.swift"]),
+    srcs = glob(["Core/*.swift"]) + ["//config:native_app_distribution"],
     module_name = "ShellstormCore",
 )
 
@@ -39,15 +39,13 @@ swift_library(
 
 macos_application(
     name = "Xpromptvs",
-    bundle_id = "ai.xpromptvs.development",
-    bundle_name = "Xpromptvs Development",
+    bundle_id = select({"//config:official": "ai.xpromptvs.app", "//conditions:default": "ai.xpromptvs.development"}),
+    bundle_name = select({"//config:official": "Xpromptvs", "//conditions:default": "Xpromptvs Development"}),
     codesignopts = ["--options=runtime"],
-    entitlements = select({
-        ":release": "Xpromptvs.entitlements",
-        "//conditions:default": ":dev_entitlements",
-    }),
+    entitlements = select({"//config:official": "Xpromptvs-official.entitlements", "//conditions:default": ":source_entitlements"}),
     entitlements_validation = "error",
-    infoplists = ["Info.plist"],
+    infoplists = select({"//config:official": ["Info-official.plist"], "//conditions:default": ["Info.plist"]}),
+    provisioning_profile = select({"//config:official": "Xpromptvs.provisionprofile", "//conditions:default": None}),
     minimum_os_version = "26.0",
     tags = ["manual"],
     deps = [":ShellstormAppLib"],
@@ -69,7 +67,9 @@ swift_test(
 
 swift_test(
     name = "NativeSimulatorAppTests",
-    srcs = glob(["AppTests/*.swift"]) + ["Sources/SimulatorMetalView.swift", "Sources/SimulatorMetalRenderer.swift", "Sources/NativeSimulatorInput.swift"],
+    srcs = glob(["AppTests/*.swift"]) + ["Sources/SimulatorMetalView.swift", "Sources/SimulatorMetalRenderer.swift", "Sources/NativeSimulatorInput.swift", "Sources/NativeSourceScrollObserver.swift"],
     module_name = "NativeSimulatorAppTests",
     deps = [":ShellstormCore", "//host/RdevCore:RdevCore", "//host/RdevHostKit:RdevHostKit"],
 )
+
+alias(name = "source_entitlements", actual = select({":release": "Xpromptvs.entitlements", "//conditions:default": ":dev_entitlements"}))
