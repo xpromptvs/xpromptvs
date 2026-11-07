@@ -1,0 +1,8 @@
+[submodule "third_party/libaom"]
+    path = third_party/libaom
+    url = https://aomedia.googlesource.com/aom
+    shallow = true
+[submodule "third_party/libopus"]
+    path = third_party/libopus
+    url = https://github.com/xiph/opus.git
+    shallow = true

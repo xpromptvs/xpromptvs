@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    // **NO EMIT: esbuild builds the renderer.** It has to, because the dashboard shares its device
+    // list and its home chrome with the browser client (`web/src/shared/`), and tsc cannot emit a
+    // tree that reaches outside this package's `rootDir`. tsc still type-checks every one of those
+    // files — it follows the imports — which is the half that matters.
+    "noEmit": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": []
+  },
+  "include": ["src/renderer/**/*.ts"]
+}

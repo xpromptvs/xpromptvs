@@ -1,0 +1,51 @@
+load("@rules_swift//swift:swift.bzl", "swift_library", "swift_test")
+
+# The Swift face of //host/rdev-noise — `snow` behind a C ABI, wrapped so callers never see a raw
+# pointer, a manual free, or the handshake-to-transport transition.
+#
+# SEPARATE FROM RdevCore ON PURPOSE. RdevCore is pure portable logic whose only external dependency
+# is SwiftTerm, and its test suite is expected to run in a third of a second; linking a Rust archive
+# into it would cost that character for code only the host needs.
+swift_library(
+    name = "RdevNoise",
+    srcs = glob(["Sources/RdevNoise/**/*.swift"]),
+    module_name = "RdevNoise",
+    visibility = ["//visibility:public"],
+    deps = ["//host/rdev-noise:CRdevNoise"],
+)
+
+# These tests are what keeps the hand-written C header honest against src/lib.rs: they drive every
+# function in it from Swift, so a signature that drifts fails to compile or fails here rather than
+# corrupting a handshake at runtime.
+swift_test(
+    name = "RdevNoiseTests",
+    srcs = glob(["Tests/RdevNoiseTests/**/*.swift"]),
+    deps = [":RdevNoise"],
+)
+
+# **THE ONLY TARGET THAT LINKS BOTH HALVES OF THE HOST'S §11.** `RdevCore.E2ESession` decides policy
+# and `RdevNoise.NoiseSession` does the cryptography, and they are separate modules on purpose — the
+# comment on `RdevNoise` above says why. That separation means no other suite can see them wired
+# together, and the wiring is where the handshake hash and the peer's static key cross from one to
+# the other: the two values the whole §11.2 gate rests on.
+#
+# It lives HERE rather than in RdevCore because RdevCore must not link a Rust archive; adding this
+# dependency there would cost its suite the third of a second that is the reason it is separate.
+#
+# §17.3 of the specification asks for exactly this ("Use real Noise on both ends"), and
+# `protocol/test/e2e-signalling.test.ts` is its TypeScript counterpart, driven by the same fixture.
+#
+# MEASURED, not asserted. Regenerate `protocol/fixtures/e2e-session.json` with the device descriptors
+# carrying filler bytes where their X25519 public keys belong — which is what they held before this
+# target existed — and `RdevCoreTests` still passes while this one fails. A descriptor whose DH key
+# is not a key any handshake could authenticate is invisible to every suite that never runs one.
+# 11 XCTest tests; same eyeball rule as RdevCore's counts, nothing enforces it.
+swift_test(
+    name = "E2ESignallingTests",
+    srcs = glob(["Tests/E2ESignallingTests/**/*.swift"]),
+    data = ["//protocol:fixtures"],
+    deps = [
+        ":RdevNoise",
+        "//host/RdevCore:RdevCore",
+    ],
+)

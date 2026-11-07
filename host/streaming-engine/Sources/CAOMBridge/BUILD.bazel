@@ -1,0 +1,101 @@
+load("@rules_swift//swift:swift.bzl", "swift_interop_hint")
+
+# libwebrtc.a statically embeds its OWN copy of libaom, exporting the exact same global
+# symbol names (~987 aom_codec_*/av1_*/aom_dsp_* symbols) that //third_party:libaom
+# exports. Link them naively into the same binary and one order gives a hard
+# duplicate-symbol error, the other silently binds the engine to the WRONG encoder — the
+# collision is real, not theoretical, once CAOMBridge.c links libaom directly instead of
+# dlopen'ing it at runtime (upstream removed the loader).
+#
+# The fix, reproduced here exactly as host/streaming-engine/scripts/build-libaom.sh
+# documents and performs it (that script is the ground truth; read its tail before
+# changing this): compile CAOMBridge.c, then partial-link it together with the WHOLE of
+# libaom.a into one relocatable object that localizes (hides) every symbol libaom
+# defines, so the only symbols left exported are CAOMBridge's own llv_aom_* entry
+# points. libwebrtc's embedded copy then has the global symbol table entirely to itself.
+#
+# Taking ALL of libaom's defined globals (not just an `_aom*` prefix filter) is
+# deliberate — libaom also defines `_av1_*` and `_aom_dsp_*` — and depends on
+# //third_party:libaom being built with -fno-common (its tentative-definition RTCD
+# tables are otherwise immune to -unexported_symbols_list; see that target's comment).
+genrule(
+    name = "CAOMBridgeAom",
+    srcs = [
+        "CAOMBridge.c",
+    ] + glob([
+        "include/*.h",
+        "vendor/aom/*.h",
+    ]) + [
+        "//third_party:libaom_static_lib",
+    ],
+    outs = ["libCAOMBridgeAom.a"],
+    cmd = """
+set -eu
+src="$(location CAOMBridge.c)"
+pkg_dir="$$(dirname "$$src")"
+lib="$(location //third_party:libaom_static_lib)"
+out="$@"
+sdk="$$(/usr/bin/xcrun --sdk macosx --show-sdk-path)"
+
+obj="$(@D)/CAOMBridge.o"
+/usr/bin/cc -c -arch arm64 -isysroot "$$sdk" \
+    -I "$$pkg_dir/include" -I "$$pkg_dir/vendor" \
+    -o "$$obj" "$$src"
+
+symbols="$(@D)/libaom-symbols.txt"
+/usr/bin/nm -gU "$$lib" | awk 'NF == 3 { print $$3 }' | sort -u > "$$symbols"
+if [ ! -s "$$symbols" ]; then
+    echo "no global symbols found in $$lib; refusing to localize nothing" >&2
+    exit 1
+fi
+
+combined_obj="$(@D)/CAOMBridgeAom.o"
+/usr/bin/ld -r -o "$$combined_obj" "$$obj" \
+    -all_load "$$lib" \
+    -unexported_symbols_list "$$symbols"
+
+rm -f "$$out"
+/usr/bin/ar rcs "$$out" "$$combined_obj"
+
+exported="$$(/usr/bin/nm -gU "$$out" | awk 'NF == 3 { print $$3 }' | sort -u)"
+if [ -z "$$exported" ]; then
+    echo "$$out exports no symbols at all" >&2
+    exit 1
+fi
+leaked="$$(printf '%s\\n' "$$exported" | grep -v '^_llv_aom_' || true)"
+if [ -n "$$leaked" ]; then
+    echo "libaom symbols leaked into $$out (expected only _llv_aom_* entry points):" >&2
+    printf '%s\\n' "$$leaked" >&2
+    exit 1
+fi
+entry_points="$$(printf '%s\\n' "$$exported" | grep -c '^_llv_aom_' || true)"
+if [ "$$entry_points" -eq 0 ]; then
+    echo "$$out exports no llv_aom_* entry points" >&2
+    exit 1
+fi
+""",
+)
+
+# CAOMBridge is a headers-only cc_library: its ONE translation unit is compiled and
+# linked against libaom by the CAOMBridgeAom genrule above, not by this rule. Compiling
+# CAOMBridge.c a second time here would produce a build with two definitions of every
+# llv_aom_* symbol (confirmed upstream, host/streaming-engine/scripts/build-libaom.sh) —
+# the object file belongs in exactly one archive.
+cc_library(
+    name = "CAOMBridge",
+    srcs = [":CAOMBridgeAom"],
+    hdrs = glob(["include/*.h", "vendor/aom/*.h"]),
+    aspect_hints = [":CAOMBridge_interop"],
+    includes = [
+        "include",
+        "vendor",
+    ],
+    visibility = ["//host/streaming-engine:__subpackages__"],
+)
+
+# Generates the module map, so `import CAOMBridge` resolves without maintaining one by
+# hand — the same mechanism //host/RdevHostKit:CPionBridge_interop uses.
+swift_interop_hint(
+    name = "CAOMBridge_interop",
+    module_name = "CAOMBridge",
+)

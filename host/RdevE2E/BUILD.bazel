@@ -1,0 +1,40 @@
+load("@rules_swift//swift:swift.bzl", "swift_library", "swift_test")
+
+# **§11's two gates, in the one module that can hold both.**
+#
+# `E2ESignallingGate` (responder) and `E2EClientGate` (initiator) are one contract seen from two
+# ends, and the failure mode is them drifting apart — so they live together, are read together, and
+# are tested against EACH OTHER rather than against two hand-rolled harnesses that can agree on the
+# same mistake.
+#
+# SEPARATE FROM RdevHostKit, and that is what this module is FOR. The gates need exactly RdevCore
+# (policy) and RdevNoise (cryptography); RdevHostKit additionally links Opus and the Go Pion archive,
+# which a client has no use for. `tools/RdevViewer` is a native CLIENT — it answers offers over the
+# same signalling the browser uses — and once signalling is E2E-only it needs the initiator gate and
+# nothing else the host kit carries.
+#
+# SEPARATE FROM RdevCore for RdevCore's own reason: it is pure portable logic that must never link a
+# Rust archive, and its suite runs in a third of a second because of it.
+swift_library(
+    name = "RdevE2E",
+    srcs = glob(["Sources/RdevE2E/**/*.swift"]),
+    module_name = "RdevE2E",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//host/RdevCore:RdevCore",
+        "//host/RdevNoise:RdevNoise",
+    ],
+)
+
+# The gates as production runs them, including the pair of them driven against each other over real
+# Noise with no hand-written step in between — which is the only thing that can see a wiring defect
+# both hand-rolled harnesses reproduce identically.
+#
+# `//host/RdevNoise:E2ESignallingTests` is the layer below: the two HALVES of §11 agreeing.
+# 25 XCTest tests; same eyeball rule as RdevCore's counts, nothing enforces it.
+swift_test(
+    name = "RdevE2ETests",
+    srcs = glob(["Tests/RdevE2ETests/**/*.swift"]),
+    data = ["//protocol:fixtures"],
+    deps = [":RdevE2E"],
+)

@@ -1,0 +1,10 @@
+build --macos_minimum_os=26.0
+build --host_macos_minimum_os=26.0
+
+build --@rules_go//go/config:tags=bazel
+
+build --incompatible_strict_action_env
+
+build --@rules_rust//rust/settings:extra_exec_rustc_flags=-Cstrip=none
+build --@rules_apple//apple/build_settings:signing_certificate_name="-"
+build --//config:profile=publication

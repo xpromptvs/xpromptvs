@@ -1,0 +1,14 @@
+{
+  "name": "@rdev/e2e",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:windows": "node window-stacking-check.mjs",
+    "test:prediction": "node terminal-prediction-check.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0",
+    "qrcode-generator": "^2.0.4"
+  }
+}

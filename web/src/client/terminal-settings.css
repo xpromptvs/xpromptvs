@@ -1,0 +1,50 @@
+#terminal-settings-open {
+  display: flex; align-items: center; justify-content: center; flex: none;
+  width: 44px; height: var(--statusbar-h); padding: 0; border: 0;
+  background: transparent; color: var(--muted); cursor: pointer;
+}
+#terminal-settings-open:is(:hover, :active) { color: #fff; }
+:root[data-layout="glasses"] #terminal-settings-open,
+:root[data-layout="tabbed"][data-tab="sim"] #terminal-settings-open { display: none; }
+:root:not([data-layout="glasses"]) #terminal-settings-open + #keyboard-open { margin-left: 0; }
+:root[data-native-client="true"] #statusbar[data-local-client="true"] #status-dot[data-state="connected"],
+:root[data-native-client="true"] #statusbar[data-local-client="true"]:has(#status-dot[data-state="connected"]) .status-cell[data-cell="state"],
+:root[data-native-client="true"] #statusbar[data-local-client="true"]:has(#status-dot[data-state="connected"]) .status-cell[data-cell="state"] + .status-divider:not(:has(+ .status-cell[data-cell="remote"])) { display: none; }
+/* This Mac's "remote access enabled" (session.ts `remoteAccess`) keeps its divider with the state cell hidden — the
+   window's own button (`#macs-open`, "Other Devices" in This Mac since 2026-10-05) then stands where "connected"
+   would: "Other Devices | remote access enabled", the bar's usual separator (asked for, 2026-10-04). The button's own margin is the gap before it. */
+:root[data-native-client="true"] #statusbar[data-local-client="true"]:has(#status-dot[data-state="connected"]) .status-cell[data-cell="state"] + .status-divider:has(+ .status-cell[data-cell="remote"]) { margin-left: 0; }
+:root:not([data-layout="glasses"]) dialog.terminal-settings {
+  display: none; position: fixed; inset: 0; margin: auto; width: 440px;
+  max-width: calc(100vw - 32px); max-height: calc(100dvh - 48px); height: fit-content;
+  padding: 0 16px; overflow: auto; border: 1px solid #ffffff14; border-radius: 14px;
+  background: var(--term-bg); color: var(--text); box-shadow: 0 16px 40px #0005;
+}
+:root:not([data-layout="glasses"]) dialog.terminal-settings[open] { display: block; }
+dialog.terminal-settings::backdrop { background: #0007; }
+:root:not([data-layout="glasses"]) .terminal-settings .win-settings-head { height: 64px; margin: 0 -16px 12px; padding: 0 16px; }
+/* A PHONE: a sheet over the terminal surface, as a window's settings cover their window (terminal-settings.ts) —
+   opened with show(), so no top layer and no backdrop: the tab bar and the status bar stay live, and it is laid out
+   with the window settings' rails. z-index 5 is over the selection handles (4). */
+:root[data-layout="tabbed"] dialog.terminal-settings {
+  position: absolute; inset: 0; z-index: 5; width: auto; height: auto; max-width: none; max-height: none;
+  margin: 0; padding: 0 var(--rail-r) 24px var(--rail-l); border: 0; border-radius: 0; box-shadow: none;
+  overscroll-behavior: contain;
+}
+:root[data-layout="tabbed"] .terminal-settings .win-settings-head {
+  margin: 0 calc(var(--rail-r) * -1) 8px calc(var(--rail-l) * -1); padding: 0 var(--rail-r) 0 var(--rail-l);
+}
+:root[data-layout="tabbed"] #terminal-settings-open[aria-expanded="true"] { color: #fff; }
+.terminal-font-stepper { display: flex; align-items: center; gap: 4px; }
+.terminal-font-stepper button { width: 36px; height: 44px; border: 0; background: transparent; color: var(--text); font: 22px var(--font-ui); cursor: pointer; }
+.terminal-font-stepper output { min-width: 42px; text-align: center; font: 500 15px var(--font-ui); color: var(--muted); }
+/* What draws the terminals (Renderer row): the stepper's value text, set right. */
+.terminal-settings output.terminal-renderer { text-align: right; font: 500 15px var(--font-ui); color: var(--muted); }
+
+:root #statusbar #macs-open {
+  display: inline-flex; align-items: center; gap: 8px; width: auto; height: 32px;
+  padding: 0; margin: 0 14px 0 0; background: transparent; border: 0;
+  color: var(--muted); font: 500 12px var(--font-ui); cursor: pointer;
+}
+:root #statusbar #macs-open svg { width: 17px; height: 17px; }
+:root #statusbar #macs-open:hover, :root #statusbar #macs-open:active { color: #fff; }

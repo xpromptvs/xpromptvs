@@ -1,0 +1,135 @@
+# rdev: pion/sctp abandons a chunk of the retransmission-count policy (a data channel's
+# maxRetransmits) where it would RETRANSMIT it, never at a transmission. Against
+# github.com/pion/sctp v1.10.0's association.go, the version host/streaming-engine/PionBridge/go.mod
+# resolves, applied by go_deps.module_override in MODULE.bazel. A PION/SCTP BUMP MUST REBASE THIS
+# PATCH — and host/streaming-engine/PionBridge/sctp_abandon_test.go fails without it.
+#
+# WHICH CHANNEL: the ?dc=1 `video` channel, and any other never-retransmitted one. The terminal lane,
+# which motivated it, is RELIABLE now: never retransmitted, it let the BROWSER's SCTP abandon chunks
+# behind a queued SACK and storm FORWARD-TSN on a slow link (the lane's design spec, "The carrier").
+#
+# STOCK, checkPartialReliabilityStatus runs at EVERY transmission
+# (movePendingDataChunkToInflightQueue with nSent = 1, and both retransmit paths) and abandons a
+# ReliabilityTypeRexmit chunk once nSent >= reliabilityValue: for maxRetransmits: 0 (the ?dc=1
+# video channel; the terminal lane when it was dialled so) that is 1 >= 0, at its FIRST send, while
+# it is still in flight — and rackRemoves it, so loss detection never sees it. Every SACK that has
+# not yet covered it then moves the Advanced.Peer.Ack.Point over it (handleSack, RFC 3758 C2) and
+# MUST send a FORWARD-TSN (C3); the browser SACKs each out-of-date FORWARD-TSN (§3.6), whose SACK
+# draws the next: one FORWARD-TSN + one SACK per packet, one cycle a round trip, with NOTHING lost.
+# Measured on the then never-retransmitted lane at 5% loss each way, 80 ms: 21,526 DTLS records
+# stock, 8,386 patched, the same echo latency.
+#
+# THE PATCH: under the rexmit policy checkPartialReliabilityStatus abandons nothing;
+# abandonInsteadOfRetransmit does, at the two places a chunk would be RE-transmitted —
+# gatherOutboundFastRetransmissionPackets (fast retransmit) and getDataPacketsToRetransmit (T3,
+# RACK, PTO) — once nSent > reliabilityValue. It abandons the chunk, moves the
+# Advanced.Peer.Ack.Point over the abandoned run (C1/C2) and sets willSendForwardTSN (C3), so the
+# FORWARD-TSN leaves in that same gather (gatherOutbound gathers FORWARD-TSN after retransmissions).
+# A chunk that arrives is cum-acked and costs nothing. dcsctp and usrsctp both abandon at that
+# decision. DCEP is never abandoned, as stock; maxPacketLifeTime (ReliabilityTypeTimed) is
+# untouched.
+#
+# IT ALSO FIXES pion's off-by-one for N >= 1: RFC 8831's maxRetransmits is N RETRANSMISSIONS; pion's
+# nSent >= N (nSent counts the first send) allowed N - 1 of them. v1.12.0 (2026-09-30) makes the rule
+# nSent > N upstream but still applies it at the first send, so N = 0 still abandons there: a rebase
+# onto it keeps all of this patch's hunks.
+#
+# TWO CONSEQUENCES for N = 0, both intended: a T3 timeout (markAllToRetrasmit) abandons the channel's
+# outstanding chunks — on an association shared with reliable channels, the CONTIGUOUS abandoned
+# prefix in one FORWARD-TSN and the rest in later gathers (getDataPacketsToRetransmit stops at the
+# awnd break on the first reliable chunk it must retransmit, and C2's advance stops at the first
+# chunk not abandoned) — and after an outage the channel's own recovery owns what was lost; and a
+# PTO probe's target (the newest chunk, onPTOTimerLocked) is abandoned, not probed. And SCTP's
+# congestion control now SEES the channel's losses (RACK, fast recovery), which stock removed from
+# RACK at send.
+--- a/association.go
++++ b/association.go
+@@ -1391,6 +1391,10 @@
+ 		}
+ 
+ 		if chunkPayload.nSent > 1 || chunkPayload.missIndicator < 3 {
++			continue
++		}
++
++		if a.abandonInsteadOfRetransmit(chunkPayload) {
+ 			continue
+ 		}
+ 
+@@ -3589,15 +3593,10 @@
+ 	// PR-SCTP
+ 	if stream, ok := a.streams[chunkPayload.streamIdentifier]; ok { //nolint:nestif
+ 		stream.lock.RLock()
+-		if stream.reliabilityType == ReliabilityTypeRexmit {
+-			if chunkPayload.nSent >= stream.reliabilityValue {
+-				chunkPayload.setAbandoned(true)
+-				a.rackRemove(chunkPayload)
+-				a.log.Tracef(
+-					"[%s] marked as abandoned: tsn=%d ppi=%d (remix: %d)",
+-					a.name, chunkPayload.tsn, chunkPayload.payloadType, chunkPayload.nSent,
+-				)
+-			}
++		if stream.reliabilityType == ReliabilityTypeRexmit { //nolint:revive
++			// RDEV PATCH: abandoned where it would be RETRANSMITTED (abandonInsteadOfRetransmit), never here, at a
++			// transmission: a chunk marked abandoned while still in flight lets every SACK that has not yet covered
++			// it advance the Advanced.Peer.Ack.Point and send a FORWARD-TSN (RFC 3758 C3).
+ 		} else if stream.reliabilityType == ReliabilityTypeTimed {
+ 			elapsed := int64(time.Since(chunkPayload.since).Seconds() * 1000)
+ 			if elapsed >= int64(stream.reliabilityValue) {
+@@ -3616,6 +3615,46 @@
+ 	}
+ }
+ 
++// abandonInsteadOfRetransmit (RDEV PATCH): a chunk of the rexmit policy that has had its reliabilityValue
++// retransmissions (nSent counts transmissions, the first included) is abandoned where it would be retransmitted —
++// after loss detection (RACK, fast retransmit, T3, PTO) — and the Advanced.Peer.Ack.Point advanced over it (RFC 3758
++// C2/C3), so the FORWARD-TSN goes out in this same gather. The caller holds the lock.
++func (a *Association) abandonInsteadOfRetransmit(chunkPayload *chunkPayloadData) bool {
++	if !a.partialReliabilityEnabled() || chunkPayload.payloadType == PayloadTypeWebRTCDCEP {
++		return false
++	}
++	stream, ok := a.streams[chunkPayload.streamIdentifier]
++	if !ok {
++		return false
++	}
++	stream.lock.RLock()
++	exhausted := stream.reliabilityType == ReliabilityTypeRexmit && chunkPayload.nSent > stream.reliabilityValue
++	stream.lock.RUnlock()
++	if !exhausted {
++		return false
++	}
++	chunkPayload.retransmit = false
++	chunkPayload.setAbandoned(true)
++	a.rackRemove(chunkPayload)
++	a.log.Tracef("[%s] marked as abandoned: tsn=%d ppi=%d (remix: %d)",
++		a.name, chunkPayload.tsn, chunkPayload.payloadType, chunkPayload.nSent)
++	if sna32LT(a.advancedPeerTSNAckPoint, a.cumulativeTSNAckPoint) {
++		a.advancedPeerTSNAckPoint = a.cumulativeTSNAckPoint
++	}
++	for i := a.advancedPeerTSNAckPoint + 1; ; i++ {
++		c, ok := a.inflightQueue.get(i)
++		if !ok || !c.abandoned() {
++			break
++		}
++		a.advancedPeerTSNAckPoint = i
++	}
++	if sna32GT(a.advancedPeerTSNAckPoint, a.cumulativeTSNAckPoint) {
++		a.willSendForwardTSN = true
++	}
++
++	return true
++}
++
+ // getDataPacketsToRetransmit is called when T3-rtx is timed out and retransmit outstanding data chunks
+ // that are not acked or abandoned yet.
+ // The caller should hold the lock.
+@@ -3634,6 +3673,10 @@
+ 		}
+ 
+ 		if !chunkPayload.retransmit {
++			continue
++		}
++
++		if a.abandonInsteadOfRetransmit(chunkPayload) {
+ 			continue
+ 		}
+ 

@@ -1,0 +1,10 @@
+go 1.24.0
+
+// ONE GO MODULE AGAIN. `./host/pion-bridge` (rdev/pionbridge) is deleted — its C ABI is
+// implemented over LLV's Session now, in this module's rdev_abi.go — so the workspace is back to a
+// single member. It is KEPT rather than removed because //MODULE.bazel's go_deps extension reads
+// it (`go_deps.from_file(go_work = "//:go.work")`), and because a second Go module arriving later
+// belongs in this `use` block rather than in a second from_file tag, which gazelle refuses.
+use (
+	./host/streaming-engine/PionBridge
+)

@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <!-- `viewport-fit=cover` is the PREREQUISITE for env(safe-area-inset-*), which is 0 without it.
+         The page then extends into the unsafe areas (home indicator, on-screen nav, landscape
+         notch) and owes it to itself to inset the edge chrome — see #statusbar and the rails in
+         style.css. Without this line the existing safe-area padding on the mobile palette was
+         inert, which is how the bottom row ended up under the home indicator on iPad. -->
+    <!-- `maximum-scale=1, user-scalable=no`: NO PAGE ZOOM on a phone or tablet (viewport-fit.ts `blockPageZoom`
+         has the other two layers — iOS Safari ignores this for a pinch). Desktop browsers ignore the tag. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <script>
+      // The shared shell ships width=device-width for phones and desktop. Meta Display glasses want
+      // an explicit 600x600, and the platform's QA checker asserts it. Rewritten here, inline in the
+      // head, so it applies before the body is parsed.
+      //
+      // ASSUMPTION, not a measurement: a late viewport rewrite may not be honoured by that WebView.
+      // The device probe settles it; the fallback is a dedicated entry point carrying the tag in its
+      // initial HTML, at the cost of duplicating this body markup.
+      try {
+        var p = new URLSearchParams(location.search);
+        if (document.documentElement.dataset.glassesEnabled !== "false" && (p.get("layout") === "glasses" || (innerWidth === 600 && innerHeight === 600))) {
+          document.querySelector('meta[name="viewport"]')
+            .setAttribute("content", "width=600, height=600, initial-scale=1");
+        }
+      } catch (e) {}
+    </script>
+    <meta name="theme-color" content="#181817" />
+    <meta name="description" content="Remote control a Mac window from anywhere — low-latency window streaming with a terminal." />
+    <!-- Identifies the page as a Meta Display Glasses (MRBD) compatible webapp. -->
+    <meta name="mrbd-web-app-capable" content="yes" />
+    <!-- Raster, not SVG: the platform QA checker rejects an SVG favicon, data URLs included. -->
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <title>Xpromptvs — Your workspace, anywhere.</title>
+    <!-- The dashboard no longer paints monospace text; preload before xterm measures its first grid. -->
+    <link rel="preload" href="/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="/shellstorm/shell.css" />
+    <!-- The session's own stylesheet (style.css) is IMPORTED by main.ts, first among its CSS — never linked here: with
+         several build inputs vite emitted a linked style.css as its own file AFTER main's, so its rules beat every
+         later file's of equal specificity in a build and lost to them on the dev server (2026-10-06, the phone's tabs). -->
+    <script src="/shellstorm/anime.umd.min.js" defer></script>
+    <script src="/shellstorm/motion-debug.js" defer></script>
+<script src="/shellstorm/glow-raster.js" defer></script>
+<script src="/shellstorm/connection-motion.js" defer></script>
+<script src="/shellstorm/session-motion.js" defer></script>
+<script src="/shellstorm/computer-motion.js" defer></script>
+<script src="/shellstorm/motion.js" defer></script>
+  <link rel="stylesheet" href="/shellstorm/motion.css" />
+</head>
+  <body>
+    <div class="safari-tint" aria-hidden="true"></div>
+    <div id="session"></div><!-- Standalone motion wrapper; mountClient owns the shadow surface. -->
+<!-- §11 cannot start without an identity, and `?e2e=1` is what asks for one. Its contents are
+     built by `e2e-setup.ts` — the DECISION is `e2eSetupView`, pure and tested, because §10.1's
+     requirement that the identity be NAMED lives in a line of text. -->
+<dialog id="e2e-setup" class="ss-dialog e2e-setup" aria-label="Sign in with a passkey">
+ <h2 id="e2e-setup-title"></h2>
+ <p id="e2e-setup-body"></p>
+ <code id="e2e-setup-identity" class="e2e-setup-identity" hidden></code>
+ <div id="e2e-setup-actions" class="ss-dialog-actions"></div>
+</dialog>
+<!-- **The Mac's identity changed under this window.** `app://client/` adopts from the shell only when
+     it has NO config and §10.1 forbids an incoming chain replacing one, so without this the window
+     refuses the host's chain forever with `peer-chain` and names neither root. The DECISION and every
+     word are `identity-mismatch.ts`, pure and tested; the two codes are what a person compares, so
+     they are SELECTABLE like every other code in the product. -->
+
+<!-- Several lines pasted into a program NOT in bracketed paste mode each run as they arrive, so the paste
+     asks first (paste-and-drop design §2.4). The words are `paste-ui.ts`'s `MULTILINE_QUESTION`. -->
+
+<!-- A FOLDER copied in Finder and pasted to ANOTHER Mac (the app only; docs/client-web.md, "A folder"): its path
+     on this Mac, or the folder zipped and sent. The words are `paste-local.ts`'s `folderQuestion`. -->
+
+
+<!-- **THE DASHBOARD IS BUILT, NOT WRITTEN TWICE.** Header, quick connect, My Devices, Settings and
+     the profile alert all come from `web/src/shared/dashboard.ts`, which the native app's own
+     window mounts too; this element is the host, and what follows are the browser's OWN additions.
+     `docs/ui-design.md`. -->
+<div id="welcome" class="welcome-overlay ss-home hidden"></div>
+
+    <script type="module" src="/src/client/main.ts"></script>
+  </body>
+</html>

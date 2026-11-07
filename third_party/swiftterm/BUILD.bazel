@@ -1,0 +1,34 @@
+load("@rules_swift//swift:swift.bzl", "swift_library", "swift_test")
+
+# The full macOS source set, matching what SwiftPM compiles, plus the shim and rdev's read-only
+# accessors. Slimming the source set was tried and does not compile — see bundle_module_shim.swift.
+#
+# rdev_snapshot_access.swift is compiled INTO module SwiftTerm on purpose: it reads internal state
+# (and five members rdev-snapshot-access.patch widens from private) that the terminal serializer
+# needs, and exposes it read-only. See host/RdevCore/Sources/RdevCore/SwiftTermSnapshot.swift.
+# The patch also carries SIX behaviour fixes for fidelity with xterm.js (column-operation gaps,
+# tab stops on a width change, the alternate screen's fill, leaving it, a recycled scrollback line,
+# grapheme widths), and FIVE host-safety fixes (a non-ASCII DECRQSS crashed the process; sixel
+# and kitty graphics are never decoded — one crashed it, the other hung it; an OSC/DECRQSS body is
+# capped at xterm.js's payload limit, CSI parameters and intermediates as xterm.js caps them);
+# its header says why.
+swift_library(
+    name = "SwiftTerm",
+    srcs = [
+        "@swiftterm//:srcs",
+        "bundle_module_shim.swift",
+        "rdev_snapshot_access.swift",
+    ],
+    module_name = "SwiftTerm",
+    visibility = ["//visibility:public"],
+)
+
+# One test per accessor: a SwiftTerm upgrade that breaks the patch or renames what an accessor reads
+# fails here rather than turning the serializer's reads into silent defaults.
+swift_test(
+    name = "SwiftTermAccessorTests",
+    srcs = ["Tests/SwiftTermAccessorTests.swift"],
+    deps = [":SwiftTerm"],
+)
+
+exports_files(["rdev-snapshot-access.patch"])

@@ -1,0 +1,16 @@
+[package]
+name = "rdev-noise"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+name = "rdev_noise"
+crate-type = ["staticlib", "rlib"]
+
+[dependencies]
+snow = "0.10"
+
+[dev-dependencies]
+hex = "0.4"
+serde_json = "1"

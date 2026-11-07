@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 2,
+  "repetitions": [
+    {"index": 1, "receiverOrder": ["pion", "libwebrtc"]},
+    {"index": 2, "receiverOrder": ["libwebrtc", "pion"]},
+    {"index": 3, "receiverOrder": ["libwebrtc", "pion"]},
+    {"index": 4, "receiverOrder": ["pion", "libwebrtc"]}
+  ],
+  "cases": [
+    {
+      "name": "clean-reference",
+      "profile": "clean",
+      "seed": 1741,
+      "measuredFrames": 60,
+      "scriptedKeyframeOffsets": [30]
+    },
+    {
+      "name": "single-loss-three-frame-recovery",
+      "profile": "single-original-loss",
+      "seed": 1741,
+      "measuredFrames": 60,
+      "scriptedKeyframeOffsets": [3]
+    },
+    {
+      "name": "four-packet-burst-six-frame-recovery",
+      "profile": "four-packet-burst",
+      "seed": 1741,
+      "measuredFrames": 60,
+      "scriptedKeyframeOffsets": [6]
+    },
+    {
+      "name": "moderate-wan-seed-1741",
+      "profile": "moderate-wan-seed-1741",
+      "seed": 1741,
+      "measuredFrames": 180,
+      "scriptedKeyframeOffsets": [8, 16, 24, 33, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 128, 136, 144, 152, 160, 168, 176, 179]
+    },
+    {
+      "name": "moderate-wan-seed-8191",
+      "profile": "moderate-wan-seed-8191",
+      "seed": 8191,
+      "measuredFrames": 180,
+      "scriptedKeyframeOffsets": [8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 128, 136, 144, 152, 160, 168, 176, 179]
+    },
+    {
+      "name": "moderate-wan-seed-65537",
+      "profile": "moderate-wan-seed-65537",
+      "seed": 65537,
+      "measuredFrames": 180,
+      "scriptedKeyframeOffsets": [8, 16, 24, 32, 41, 48, 56, 64, 72, 80, 88, 97, 104, 112, 120, 128, 136, 144, 152, 160, 168, 176, 179]
+    },
+    {
+      "name": "poor-wan-seed-1741",
+      "profile": "poor-wan-seed-1741",
+      "seed": 1741,
+      "measuredFrames": 179,
+      "scriptedKeyframeOffsets": [8, 16, 24, 33, 40, 48, 56, 64, 72, 80, 89, 96, 104, 112, 120, 129, 136, 144, 152, 161, 169, 176, 178]
+    },
+    {
+      "name": "poor-wan-seed-8191",
+      "profile": "poor-wan-seed-8191",
+      "seed": 8191,
+      "measuredFrames": 180,
+      "scriptedKeyframeOffsets": [8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 98, 104, 112, 123, 130, 136, 145, 152, 160, 168, 176, 179]
+    },
+    {
+      "name": "poor-wan-seed-65537",
+      "profile": "poor-wan-seed-65537",
+      "seed": 65537,
+      "measuredFrames": 180,
+      "scriptedKeyframeOffsets": [8, 18, 24, 32, 42, 48, 56, 64, 72, 80, 89, 97, 104, 112, 120, 129, 136, 145, 152, 160, 168, 176, 179]
+    }
+  ]
+}

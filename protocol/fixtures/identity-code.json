@@ -1,0 +1,146 @@
+{
+  "alphabet": "0123456789ABCDEFGHJKMNPQRSTVWXYZ",
+  "bytes": 10,
+  "vectors": [
+    {
+      "root_id": "00000000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "code": "0000-0000-0000-0000"
+    },
+    {
+      "root_id": "08421084210842108421aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "code": "1111-1111-1111-1111"
+    },
+    {
+      "root_id": "10842108421084210842aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "code": "2222-2222-2222-2222"
+    },
+    {
+      "root_id": "18c6318c6318c6318c63aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "code": "3333-3333-3333-3333"
+    },
+    {
+      "root_id": "21084210842108421084aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "code": "4444-4444-4444-4444"
+    },
+    {
+      "root_id": "294a5294a5294a5294a5aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "code": "5555-5555-5555-5555"
+    },
+    {
+      "root_id": "318c6318c6318c6318c6aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "code": "6666-6666-6666-6666"
+    },
+    {
+      "root_id": "39ce739ce739ce739ce7aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "code": "7777-7777-7777-7777"
+    },
+    {
+      "root_id": "42108421084210842108aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "code": "8888-8888-8888-8888"
+    },
+    {
+      "root_id": "4a5294a5294a5294a529aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "code": "9999-9999-9999-9999"
+    },
+    {
+      "root_id": "5294a5294a5294a5294aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "code": "AAAA-AAAA-AAAA-AAAA"
+    },
+    {
+      "root_id": "5ad6b5ad6b5ad6b5ad6baaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "code": "BBBB-BBBB-BBBB-BBBB"
+    },
+    {
+      "root_id": "6318c6318c6318c6318caaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "code": "CCCC-CCCC-CCCC-CCCC"
+    },
+    {
+      "root_id": "6b5ad6b5ad6b5ad6b5adaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "code": "DDDD-DDDD-DDDD-DDDD"
+    },
+    {
+      "root_id": "739ce739ce739ce739ceaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "code": "EEEE-EEEE-EEEE-EEEE"
+    },
+    {
+      "root_id": "7bdef7bdef7bdef7bdefaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "code": "FFFF-FFFF-FFFF-FFFF"
+    },
+    {
+      "root_id": "84210842108421084210aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "code": "GGGG-GGGG-GGGG-GGGG"
+    },
+    {
+      "root_id": "8c6318c6318c6318c631aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "code": "HHHH-HHHH-HHHH-HHHH"
+    },
+    {
+      "root_id": "94a5294a5294a5294a52aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "code": "JJJJ-JJJJ-JJJJ-JJJJ"
+    },
+    {
+      "root_id": "9ce739ce739ce739ce73aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "code": "KKKK-KKKK-KKKK-KKKK"
+    },
+    {
+      "root_id": "a5294a5294a5294a5294aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "code": "MMMM-MMMM-MMMM-MMMM"
+    },
+    {
+      "root_id": "ad6b5ad6b5ad6b5ad6b5aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "code": "NNNN-NNNN-NNNN-NNNN"
+    },
+    {
+      "root_id": "b5ad6b5ad6b5ad6b5ad6aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "code": "PPPP-PPPP-PPPP-PPPP"
+    },
+    {
+      "root_id": "bdef7bdef7bdef7bdef7aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "code": "QQQQ-QQQQ-QQQQ-QQQQ"
+    },
+    {
+      "root_id": "c6318c6318c6318c6318aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "code": "RRRR-RRRR-RRRR-RRRR"
+    },
+    {
+      "root_id": "ce739ce739ce739ce739aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "code": "SSSS-SSSS-SSSS-SSSS"
+    },
+    {
+      "root_id": "d6b5ad6b5ad6b5ad6b5aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "code": "TTTT-TTTT-TTTT-TTTT"
+    },
+    {
+      "root_id": "def7bdef7bdef7bdef7baaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "code": "VVVV-VVVV-VVVV-VVVV"
+    },
+    {
+      "root_id": "e739ce739ce739ce739caaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "code": "WWWW-WWWW-WWWW-WWWW"
+    },
+    {
+      "root_id": "ef7bdef7bdef7bdef7bdaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "code": "XXXX-XXXX-XXXX-XXXX"
+    },
+    {
+      "root_id": "f7bdef7bdef7bdef7bdeaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "code": "YYYY-YYYY-YYYY-YYYY"
+    },
+    {
+      "root_id": "ffffffffffffffffffffaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "code": "ZZZZ-ZZZZ-ZZZZ-ZZZZ"
+    },
+    {
+      "root_id": "0000000000000000000000000000000000000000000000000000000000000000",
+      "code": "0000-0000-0000-0000"
+    },
+    {
+      "root_id": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "code": "ZZZZ-ZZZZ-ZZZZ-ZZZZ"
+    },
+    {
+      "root_id": "606c98d0b9335237d9ac94a0364819405df10ef29e50d623ba35c78a0515b203",
+      "code": "C1P9-HM5S-6D93-FPDC"
+    }
+  ]
+}

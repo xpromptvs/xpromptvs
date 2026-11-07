@@ -1,0 +1,43 @@
+load("@rules_swift//swift:swift.bzl", "swift_library")
+load("@rules_apple//apple:macos.bzl", "macos_command_line_application")
+
+# TEST-ONLY. This is not a product — it is the front-end the 5 smokes drive and the reason
+# increment 1 could be gated on them. It also serves smoke-host.sh's headless path
+# (RDEV_TEST_PATTERN=1, no GUI, no WindowServer, no TCC), which the app can never serve
+# because the app IS AppKit.
+#
+# Its stdout format is frozen: the smokes parse `PAIR code=<code> token=<token>` with sed.
+# QRMatrix lives here, not in the Kit: printing a scannable QR to a terminal is a CLI
+# affordance and nothing else references it. The app renders its QR in HTML.
+swift_library(
+    name = "HarnessLib",
+    srcs = [
+        "CaptureMarker.swift",
+        "InputObstruction.swift",
+        "PairingWindow.swift",
+        "QRMatrix.swift",
+        "main.swift",
+    ],
+    module_name = "RdevHostHarness",
+    deps = [
+        "//host/RdevCore:RdevCore",
+        "//host/RdevHostKit:RdevHostKit",
+    ],
+)
+
+# LOAD-BEARING: bundle_id stays `dev.rdev.host`. TCC keys on the signature, and this identity
+# already holds Screen Recording and Accessibility on the dev machine — the 4 GUI smokes depend
+# on that. The app takes `ai.xpromptvs.app` instead, so it prompts once on its own behalf
+# and cannot disturb these grants. Giving the app this id instead would break capture in the
+# GUI smokes on every machine that currently works, presenting as "the refactor broke capture".
+#
+# The signing identity comes from //.bazelrc — see the LOAD-BEARING note there about ad-hoc
+# being rules_apple's default.
+macos_command_line_application(
+    name = "RdevHostHarness",
+    bundle_id = "dev.rdev.host",
+    infoplists = ["Info.plist"],
+    minimum_os_version = "26.0",
+    visibility = ["//visibility:public"],
+    deps = [":HarnessLib"],
+)

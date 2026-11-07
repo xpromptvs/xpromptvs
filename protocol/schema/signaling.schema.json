@@ -1,0 +1,249 @@
+{
+ "$schema": "http://json-schema.org/draft-07/schema#",
+ "$id": "rdev/signaling",
+ "title": "rdev signaling message",
+ "type": "object",
+ "required": [
+  "t"
+ ],
+ "oneOf": [
+  {
+   "properties": {
+    "t": {
+     "const": "hello"
+    },
+    "role": {
+     "enum": [
+      "host",
+      "client"
+     ]
+    },
+    "token": {
+     "type": "string",
+     "minLength": 1
+    },
+    "codecs": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    }
+   },
+   "required": [
+    "t",
+    "role",
+    "token"
+   ],
+   "additionalProperties": false
+  },
+  {
+   "properties": {
+    "t": {
+     "const": "offer"
+    },
+    "sdp": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "t",
+    "sdp"
+   ],
+   "additionalProperties": false
+  },
+  {
+   "properties": {
+    "t": {
+     "const": "answer"
+    },
+    "sdp": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "t",
+    "sdp"
+   ],
+   "additionalProperties": false
+  },
+  {
+   "properties": {
+    "t": {
+     "const": "ice"
+    },
+    "cand": {
+     "type": "object"
+    }
+   },
+   "required": [
+    "t",
+    "cand"
+   ],
+   "additionalProperties": false
+  },
+  {
+   "properties": {
+    "t": {
+     "const": "bye"
+    },
+    "reason": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "t"
+   ],
+   "additionalProperties": false
+  },
+  {
+   "properties": {
+    "t": {
+     "const": "ping"
+    }
+   },
+   "required": [
+    "t"
+   ],
+   "additionalProperties": false
+  },
+  {
+   "properties": {
+    "t": {
+     "const": "pong"
+    }
+   },
+   "required": [
+    "t"
+   ],
+   "additionalProperties": false
+  },
+  {
+   "properties": {
+    "t": {
+     "const": "welcome"
+    },
+    "sessionId": {
+     "type": "string"
+    },
+    "turn": {
+     "type": "object",
+     "required": [
+      "urls",
+      "username",
+      "credential",
+      "ttl"
+     ],
+     "properties": {
+      "urls": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      },
+      "username": {
+       "type": "string"
+      },
+      "credential": {
+       "type": "string"
+      },
+      "ttl": {
+       "type": "integer",
+       "minimum": 0
+      }
+     },
+     "additionalProperties": false
+    }
+   },
+   "required": [
+    "t",
+    "sessionId",
+    "turn"
+   ],
+   "additionalProperties": false
+  },
+  {
+   "properties": {
+    "t": {
+     "const": "peer-joined"
+    },
+    "role": {
+     "enum": [
+      "host",
+      "client"
+     ]
+    }
+   },
+   "required": [
+    "t",
+    "role"
+   ],
+   "additionalProperties": false
+  },
+  {
+   "properties": {
+    "t": {
+     "const": "peer-left"
+    },
+    "role": {
+     "enum": [
+      "host",
+      "client"
+     ]
+    }
+   },
+   "required": [
+    "t",
+    "role"
+   ],
+   "additionalProperties": false
+  },
+  {
+   "properties": {
+    "t": {
+     "const": "error"
+    },
+    "code": {
+     "type": "string"
+    },
+    "msg": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "t",
+    "code"
+   ],
+   "additionalProperties": false
+  },
+  {
+   "properties": {
+    "t": {
+     "const": "e2e"
+    },
+    "ct": {
+     "type": "string",
+     "minLength": 1,
+     "maxLength": 87380,
+     "pattern": "^[A-Za-z0-9_-]+$"
+    },
+    "peer": {
+     "type": "string",
+     "minLength": 1
+    },
+    "mode": {
+     "enum": [
+      "pair",
+      "enroll",
+      "auth",
+      "resume"
+     ]
+    }
+   },
+   "required": [
+    "t",
+    "ct"
+   ],
+   "additionalProperties": false
+  }
+ ]
+}

@@ -1,0 +1,175 @@
+/* Pinned layouts keep an in-window sheet; desktop dialogs escape into the top layer. */
+dialog.win-settings:not(.terminal-settings) { margin: 0; width: auto; height: auto; max-width: none; max-height: none; border: 0; }
+.win-settings-sheet { display: contents; }
+:root:not([data-layout="glasses"]) .win-settings {
+  background: var(--tabbar); padding: 0 16px 20px; color: var(--text);
+  font-family: var(--font-ui); overscroll-behavior: contain;
+}
+:root:not([data-layout="glasses"]) .win-settings-head {
+  position: sticky; top: 0; z-index: 1; height: 64px; margin: 0 -16px 8px;
+  padding: 0 16px; background: var(--tabbar);
+}
+:root:not([data-layout="glasses"]) .win-settings-title {
+  font: 600 19px var(--font-ui); color: var(--text); text-transform: none; letter-spacing: -.025em;
+}
+:root:not([data-layout="glasses"]) .win-settings-close {
+  width: 44px; height: 44px; border-radius: 10px; color: var(--muted); background: transparent;
+}
+:root:not([data-layout="glasses"]) .win-settings-close:hover { color: #fff; background: var(--term-bg); }
+:root:not([data-layout="glasses"]) .win-settings-section { margin: 0 0 20px; }
+:root:not([data-layout="glasses"]) .win-settings-section h3 {
+  margin: 0 0 8px; padding-left: 12px; color: var(--muted);
+  font: 600 11px var(--font-ui); letter-spacing: .06em; text-transform: uppercase;
+}
+:root:not([data-layout="glasses"]) .win-settings-row {
+  flex-wrap: wrap; gap: 6px 12px; padding: 12px; margin: 0;
+  background: var(--term-bg); border-bottom: 1px solid #ffffff08;
+}
+:root:not([data-layout="glasses"]) .win-settings-section > .win-settings-row:nth-child(2) { border-radius: 12px 12px 0 0; }
+:root:not([data-layout="glasses"]) .win-settings-section > .win-settings-row:last-child { border-radius: 0 0 12px 12px; border-bottom: 0; }
+:root:not([data-layout="glasses"]) .win-settings-section > .win-settings-row:only-of-type { border-radius: 12px; }
+:root:not([data-layout="glasses"]) .win-settings-label {
+  display: flex; flex-direction: column; gap: 4px; flex: 1 1 95px; min-width: 0;
+  font: 500 14px/1.35 var(--font-ui); color: var(--text);
+}
+:root:not([data-layout="glasses"]) .win-settings-scope { font: 400 11px/1.3 var(--font-ui); color: var(--muted); }
+:root:not([data-layout="glasses"]) .win-settings-hint { flex: 0 0 100%; font: 400 12px/1.45 var(--font-ui); color: var(--muted); }
+:root:not([data-layout="glasses"]) .win-settings select {
+  min-width: 118px; max-width: 100%; min-height: 44px; padding: 0 12px;
+  border: 1px solid #ffffff12; border-radius: 9px; background: var(--tabbar); color: var(--text);
+  font: 500 13px var(--font-ui); cursor: pointer; box-shadow: none;
+}
+:root:not([data-layout="glasses"]) .win-settings :is(select, button):focus-visible { outline: 2px solid var(--muted); outline-offset: 2px; }
+:root:not([data-layout="glasses"]) .win-settings :is(select, button):disabled { opacity: .4; cursor: default; }
+.win-settings-choice { display: none; }
+.win-settings-choice-menu { min-width: 118px; }
+.win-settings-choice-menu .ctx-menu-item { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.win-settings-choice-menu .ctx-menu-item[aria-checked="true"]::after { content: "✓"; color: var(--text); }
+:root:not([data-layout="glasses"]) .win-settings .win-rate { display: block; font: 500 13px var(--font-ui); color: var(--muted); }
+:root:not([data-layout="glasses"]) .win-settings-info { margin: 24px 0 0; }
+:root:not([data-layout="glasses"]) .win-settings-info .win-settings-row { background: transparent; border: 0; padding: 4px 12px; }
+:root[data-layout="glasses"] .win-settings-section { display: contents; }
+:root[data-layout="glasses"] .win-settings-section h3,
+:root[data-layout="glasses"] .win-settings-hint { display: none; }
+:root[data-layout="glasses"] .win-settings-scope { font: inherit; }
+
+:root:not([data-layout="glasses"]) .win-settings .win-codec { color: var(--muted); font: 500 13px var(--font-ui); }
+.win-settings .win-switch, .win-settings .win-delay {
+  flex: none; width: 44px; height: 44px; padding: 0; border: 0; background: transparent;
+  position: relative; cursor: pointer;
+}
+.win-settings :is(.win-switch, .win-delay)::before {
+  content: ""; position: absolute; width: 38px; height: 22px; left: 3px; top: 11px;
+  border-radius: 12px; background: #ffffff28; transition: background 120ms;
+}
+.win-settings :is(.win-switch, .win-delay)::after {
+  content: ""; position: absolute; width: 16px; height: 16px; left: 6px; top: 14px;
+  border-radius: 50%; background: var(--muted); transition: transform 120ms, background 120ms;
+}
+.win-settings :is(.win-switch, .win-delay)[aria-checked="true"]::before { background: #ffffffdf; }
+.win-settings :is(.win-switch, .win-delay)[aria-checked="true"]::after { background: var(--tabbar); transform: translateX(16px); }
+.win-settings .win-switch:disabled { opacity: .45; cursor: default; }
+
+/* Both window surfaces share grouped settings cards over the terminal canvas. */
+:root:not([data-layout="glasses"]) .win-settings {
+  background: var(--term-bg);
+  padding: 0 var(--rail-r) 24px var(--rail-l);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+}
+:root:not([data-layout="glasses"]) .win-settings-head {
+  height: 64px; margin: 0 calc(var(--rail-r) * -1) 8px calc(var(--rail-l) * -1);
+  padding: 0 var(--rail-r) 0 var(--rail-l); background: var(--term-bg);
+}
+:root:not([data-layout="glasses"]) .win-settings-title {
+  font: 600 20px/1.2 -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+  letter-spacing: -.02em;
+}
+:root:not([data-layout="glasses"]) .win-settings-section { margin-bottom: 26px; }
+:root:not([data-layout="glasses"]) .win-settings-section h3 {
+  margin-bottom: 9px; padding-left: 14px;
+  font: 600 12px/1.25 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  letter-spacing: .045em;
+}
+:root:not([data-layout="glasses"]) .win-settings-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center; column-gap: 12px; row-gap: 3px;
+  min-height: 64px; padding: 10px 14px;
+  background: #302f30; border-color: #ffffff0d;
+}
+:root:not([data-layout="glasses"]) .win-settings-section .win-settings-label { grid-column: 1; grid-row: 1; }
+:root:not([data-layout="glasses"]) .win-settings-section .win-settings-row > :is(select, button) {
+  grid-column: 2; grid-row: 1; justify-self: end;
+}
+:root:not([data-layout="glasses"]) .win-settings-section .win-settings-row:has(.win-settings-hint) > :is(select, button) {
+  grid-row: 1 / span 2;
+}
+:root:not([data-layout="glasses"]) .win-settings-section .win-settings-hint { grid-column: 1; grid-row: 2; }
+:root:not([data-layout="glasses"]) .win-settings-label,
+:root:not([data-layout="glasses"]) .win-settings-row.scope-wide .win-settings-label {
+  color: var(--text);
+  font: 400 16px/1.3 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+}
+:root:not([data-layout="glasses"]) .win-settings-scope { display: none; }
+:root:not([data-layout="glasses"]) .win-settings-hint {
+  font: 400 12px/1.4 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+}
+:root:not([data-layout="glasses"]) .win-settings select {
+  font: 500 15px -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  background: var(--term-bg); border-color: #ffffff14;
+}
+:root:not([data-layout="glasses"]) .win-settings select.win-bitrate,
+:root:not([data-layout="glasses"]) .win-settings select.win-recovery { display: none; }
+:root:not([data-layout="glasses"]) .win-settings .win-settings-choice {
+  display: inline-flex; align-items: center; justify-content: flex-end; gap: 8px;
+  min-width: 80px; min-height: 44px; padding: 0 6px 0 8px;
+  border: 0; border-radius: 7px; background: transparent; color: var(--muted);
+  font: 500 15px -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  cursor: pointer; white-space: nowrap;
+}
+:root:not([data-layout="glasses"]) .win-settings .win-settings-choice::after {
+  content: ""; width: 7px; height: 7px; flex: none;
+  border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg) translateY(-2px);
+}
+:root:not([data-layout="glasses"]) .win-settings .win-settings-choice:focus-visible {
+  outline: 0; color: var(--text);
+}
+:root:not([data-layout="glasses"]) .win-settings-info { margin-top: 0; padding: 0 2px; }
+:root:not([data-layout="glasses"]) .win-settings-info .win-settings-row {
+  padding: 4px 12px; background: transparent; border: 0;
+}
+:root:not([data-layout="glasses"]) .win-settings-info .win-settings-row:has(.win-rate) { justify-content: flex-end; }
+:root:not([data-layout="glasses"]) .win-settings-info .win-settings-row:has(.win-rate) .win-settings-label {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}
+:root:not([data-layout="glasses"]) .win-settings-info .win-settings-row:has(.win-rate:empty) { display: none; }
+:root:not([data-layout="glasses"]) .win-settings-info .win-settings-label,
+:root:not([data-layout="glasses"]) .win-settings-info .win-rate,
+:root:not([data-layout="glasses"]) .win-settings-info .win-codec {
+  color: var(--muted);
+  font: 400 13px/1.4 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+}
+
+:root[data-layout="floating"] .win-settings-section,
+:root[data-layout="floating"] .win-settings-info { max-width: 520px; margin-left: auto; margin-right: auto; }
+:root[data-layout="floating"] .win-settings-head { margin-bottom: 16px; }
+
+/* The dialog enters the top layer: neither overflow nor a transformed window may clip its sheet. */
+:root[data-layout="floating"] dialog.win-settings:not(.terminal-settings) {
+  position: fixed; inset: 0; width: 100%; height: 100%;
+  padding: 0; background: transparent; overflow: hidden;
+  align-items: center; justify-content: center;
+}
+:root[data-layout="floating"] dialog.win-settings:not(.terminal-settings).open { display: flex; }
+:root[data-layout="floating"] dialog.win-settings::backdrop { background: #0007; }
+:root[data-layout="floating"] .win-settings-sheet {
+  display: block; position: fixed;
+  width: 480px; max-width: calc(100vw - 40px); max-height: calc(100vh - 40px); min-height: 0;
+  overflow: auto; overscroll-behavior: contain; padding: 0 16px 0;
+  background: var(--term-bg); border: 1px solid #ffffff14; border-radius: 14px;
+  box-shadow: 0 16px 40px #0005;
+}
+:root[data-layout="floating"] .win-settings-head {
+  height: 56px; margin: 0 -16px 12px; padding: 0 16px;
+}
+:root[data-layout="floating"] .win-settings-section { margin-bottom: 20px; }

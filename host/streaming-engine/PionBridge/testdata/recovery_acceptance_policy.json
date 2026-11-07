@@ -1,0 +1,31 @@
+{
+  "extendedFamilies": [
+    {"members": {"1741": "jitter-000ms-seed-1741", "65537": "jitter-000ms-seed-65537", "8191": "jitter-000ms-seed-8191"}, "name": "jitter-000ms"},
+    {"members": {"1741": "jitter-001ms-seed-1741", "65537": "jitter-001ms-seed-65537", "8191": "jitter-001ms-seed-8191"}, "name": "jitter-001ms"},
+    {"members": {"1741": "jitter-005ms-seed-1741", "65537": "jitter-005ms-seed-65537", "8191": "jitter-005ms-seed-8191"}, "name": "jitter-005ms"},
+    {"members": {"1741": "jitter-010ms-seed-1741", "65537": "jitter-010ms-seed-65537", "8191": "jitter-010ms-seed-8191"}, "name": "jitter-010ms"},
+    {"members": {"1741": "jitter-020ms-seed-1741", "65537": "jitter-020ms-seed-65537", "8191": "jitter-020ms-seed-8191"}, "name": "jitter-020ms"},
+    {"members": {"1741": "loss-0p1pct-seed-1741", "65537": "loss-0p1pct-seed-65537", "8191": "loss-0p1pct-seed-8191"}, "name": "loss-0p1pct"},
+    {"members": {"1741": "loss-0p5pct-seed-1741", "65537": "loss-0p5pct-seed-65537", "8191": "loss-0p5pct-seed-8191"}, "name": "loss-0p5pct"},
+    {"members": {"1741": "loss-1pct-seed-1741", "65537": "loss-1pct-seed-65537", "8191": "loss-1pct-seed-8191"}, "name": "loss-1pct"},
+    {"members": {"1741": "loss-2pct-seed-1741", "65537": "loss-2pct-seed-65537", "8191": "loss-2pct-seed-8191"}, "name": "loss-2pct"},
+    {"members": {"1741": "loss-5pct-seed-1741", "65537": "loss-5pct-seed-65537", "8191": "loss-5pct-seed-8191"}, "name": "loss-5pct"},
+    {"members": {"1741": "nack-loss-10pct-seed-1741", "65537": "nack-loss-10pct-seed-65537", "8191": "nack-loss-10pct-seed-8191"}, "name": "nack-loss-10pct"},
+    {"members": {"1741": "rtx-loss-10pct-seed-1741", "65537": "rtx-loss-10pct-seed-65537", "8191": "rtx-loss-10pct-seed-8191"}, "name": "rtx-loss-10pct"},
+    {"members": {"1741": "dup-immediate-0p5pct-seed-1741", "65537": "dup-immediate-0p5pct-seed-65537", "8191": "dup-immediate-0p5pct-seed-8191"}, "name": "dup-immediate-0p5pct"},
+    {"members": {"1741": "dup-immediate-2pct-seed-1741", "65537": "dup-immediate-2pct-seed-65537", "8191": "dup-immediate-2pct-seed-8191"}, "name": "dup-immediate-2pct"},
+    {"members": {"1741": "dup-delayed-0p5pct-seed-1741", "65537": "dup-delayed-0p5pct-seed-65537", "8191": "dup-delayed-0p5pct-seed-8191"}, "name": "dup-delayed-0p5pct"},
+    {"members": {"1741": "dup-delayed-2pct-seed-1741", "65537": "dup-delayed-2pct-seed-65537", "8191": "dup-delayed-2pct-seed-8191"}, "name": "dup-delayed-2pct"},
+    {"members": {"1741": "good-wifi-seed-1741", "65537": "good-wifi-seed-65537", "8191": "good-wifi-seed-8191"}, "name": "good-wifi"},
+    {"members": {"1741": "congested-wifi-seed-1741", "65537": "congested-wifi-seed-65537", "8191": "congested-wifi-seed-8191"}, "name": "congested-wifi"},
+    {"members": {"1741": "moderate-wan-seed-1741", "65537": "moderate-wan-seed-65537", "8191": "moderate-wan-seed-8191"}, "name": "moderate-wan"},
+    {"members": {"1741": "poor-wan-seed-1741", "65537": "poor-wan-seed-65537", "8191": "poor-wan-seed-8191"}, "name": "poor-wan"}
+  ],
+  "fastDiagnosticProfiles": [
+    "random-loss-1pct",
+    "loss-jitter",
+    "duplication-reordering",
+    "poor-wifi-short"
+  ],
+  "schemaVersion": 1
+}

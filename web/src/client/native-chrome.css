@@ -1,0 +1,283 @@
+/* Shared session chrome for app, desktop browser and mobile.
+   Only the native app reserves space for AppKit controls and drag grips. */
+@media (any-pointer: coarse) {
+  :root, :root * {
+    -webkit-user-select: none !important;
+    user-select: none !important;
+    -webkit-touch-callout: none !important;
+  }
+}
+:root:not([data-layout="glasses"]) { --tabbar-h: var(--native-bar-height); }
+:root:not([data-layout="glasses"]) #statusbar {
+  background: var(--tabbar); border: 0; box-shadow: none;
+  padding-right: calc(10px + env(safe-area-inset-right));
+}
+:root:not([data-layout="glasses"]):not([data-native-client="true"]) #session-disconnect {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 32px; margin-right: 8px;
+  border: 0; border-radius: 8px; box-shadow: none;
+  background: transparent; color: var(--muted); font-size: 0;
+}
+:root:not([data-layout="glasses"]) #session-disconnect::before {
+  content: ""; width: 16px; height: 16px; background: currentColor;
+  transform: translateY(1px);
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M13 8H3m5-5L3 8l5 5' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+:root:not([data-layout="glasses"]) #session-disconnect:hover {
+  color: var(--text); background: color-mix(in srgb, var(--tabbar) 50%, var(--term-bg));
+}
+:root:not([data-layout="glasses"]) #session-disconnect:focus-visible {
+  outline: 2px solid var(--muted); outline-offset: 2px;
+}
+@media (any-pointer: coarse) {
+  :root:not([data-layout="glasses"]):not([data-native-client="true"]) #session-disconnect {
+    width: 44px; height: 44px; margin-right: 6px;
+  }
+  :root:not([data-layout="glasses"]):not([data-native-client="true"]) #session-disconnect:is(:hover, :active) {
+    color: #fff; background: transparent;
+  }
+}
+/* A client that lands back on its connection screen still clears the native grips. */
+:root[data-native-client="true"] #welcome .ss-header { padding-left: var(--native-left-grip); padding-right: calc(var(--native-right-grip) + 8px); }
+:root:not([data-layout="glasses"]) #tabbar {
+  --native-search-inset: var(--native-right-grip);
+  gap: 0;
+  padding-left: var(--native-left-grip);
+  padding-right: var(--native-search-inset); /* Clear grip after Search, even when the tabs overflow. */
+  border-bottom: 0;
+  box-shadow: none;
+}
+:root:not([data-layout="glasses"]) .tabbar-scroll {
+  --native-tab-gap: 5px;
+  gap: var(--native-tab-gap); padding-left: 6px; margin-left: -6px; /* Room for the first tab's curved foot. */
+  /* Keep the pinned plus's 6px curved foot inside the scroll clip, without moving Search. */
+  padding-right: 6px; margin-right: -6px;
+  clip-path: inset(4px 0 0 round 8px 8px 0 0);
+}
+:root:not([data-layout="glasses"]) :is(.rl-tab, .tab-add) {
+  /* 4px headroom; top padding keeps highlight geometry separate from optical offsets. */
+  height: calc(var(--tabbar-h) - 4px); align-self: flex-end; margin: 0; padding: 3px 12px 6px; font-size: 12px;
+  min-width: 0; max-width: 220px; gap: 4px; flex-shrink: 0;
+  position: relative; border: 0; border-radius: 8px 8px 0 0;
+  --native-tab-fill: transparent;
+  background: var(--native-tab-fill); box-shadow: none;
+}
+:root:not([data-layout="glasses"]) :is(.rl-tab, .tab-add):hover:not(.on) {
+  --native-tab-fill: color-mix(in srgb, var(--tabbar) 50%, var(--term-bg));
+}
+:root:not([data-layout="glasses"]) .rl-tab.on {
+  --native-tab-fill: var(--term-bg);
+  z-index: 1;
+  color: var(--text);
+}
+:root:not([data-layout="glasses"]) :is(.rl-tab, .tab-add):active:not(:disabled) {
+  /* A filter also brightens the sticky plus's opaque backing, exposing its rectangle. */
+  filter: none;
+  --native-tab-fill: color-mix(in srgb, var(--tabbar) 80%, var(--term-bg));
+}
+:root:not([data-layout="glasses"]) .rl-tab-label {
+  text-align: left; font-size: 14px; margin-right: 5px;
+}
+:root:not([data-layout="glasses"]) :is(.rl-tab, .tab-add):is(.on, :hover, :active)::after {
+  content: ""; position: absolute; left: -6px; right: -6px; bottom: 0; height: 6px;
+  pointer-events: none;
+  /* A filled silhouette, without an outline crossing the curved join. */
+  background:
+    radial-gradient(circle at 0 0, transparent 5.5px, var(--native-tab-fill) 6px) left bottom / 6px 6px no-repeat,
+    radial-gradient(circle at 100% 0, transparent 5.5px, var(--native-tab-fill) 6px) right bottom / 6px 6px no-repeat;
+}
+:root:not([data-layout="glasses"]) :is(.rl-tab-close, .native-add-icon) {
+  order: -1; width: 22px; height: 22px; margin: 0 0 0 -6px;
+  display: flex; align-items: center; justify-content: center; font-size: 0; line-height: 1;
+}
+:root:not([data-layout="glasses"]) .rl-tab-close { transform: translateY(1px); }
+:root:not([data-layout="glasses"]) .rl-tab-close::before {
+  content: ""; width: calc(12px / 1.1); height: calc(12px / 1.1); background: currentColor;
+  /* Preserve the accessible Close tab control; draw a lighter, round-capped cross. */
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 2l8 8M10 2l-8 8' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+:root:not([data-layout="glasses"]) .rl-tab-kind { display: none; }
+:root:not([data-layout="glasses"]) .tab-add {
+  width: auto; font-family: var(--font-ui); font-weight: 500;
+  /* Follow the last tab until it reaches Search, then stay reachable while tabs scroll. */
+  position: sticky; right: 6px; z-index: 2;
+  background: transparent;
+  box-shadow: none;
+}
+:root:not([data-layout="glasses"]) .tab-add::before {
+  /* Opaque backing, shaped independently of the plus hover. Leave the clipped tab's
+     convex top corner and concave bottom foot visible beneath this sticky control. */
+  /* 8px corner plus the same adaptive gap used between ordinary tabs.
+     Cover both the 6px sticky inset and 6px scroll padding on the right, so
+     an overflowing tab cannot peek through between the plus and Search. */
+  content: ""; position: absolute; left: calc(-8px - var(--native-tab-gap)); right: -12px; top: 0; bottom: 0;
+  pointer-events: none; z-index: -1;
+  background:
+    radial-gradient(circle at 0 8px, transparent 7.5px, var(--tabbar) 8px) left top / 8px 8px no-repeat,
+    linear-gradient(var(--tabbar), var(--tabbar)) right top / calc(100% - 8px) calc(100% - 6px) no-repeat,
+    radial-gradient(circle at 6px 0, var(--tabbar) 5.5px, transparent 6px) 8px bottom / 6px 6px no-repeat,
+    linear-gradient(var(--tabbar), var(--tabbar)) right bottom / calc(100% - 14px) 6px no-repeat;
+}
+:root:not([data-layout="glasses"]) .native-add-icon { margin: 0; }
+:root:not([data-layout="glasses"]) .native-add-icon::after {
+  content: ""; position: absolute; inset: 0; border-radius: 8px 8px 0 0;
+  background: var(--native-tab-fill); pointer-events: none; z-index: -1;
+}
+:root:not([data-layout="glasses"]) .native-add-icon::before {
+  content: ""; width: 14px; height: 14px; background: currentColor;
+  /* Use geometry rather than a font baseline, sharing the close control's optical centre. */
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M6 2v8M2 6h8' fill='none' stroke='black' stroke-width='1.4' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+:root:not([data-layout="glasses"]) .tab-add:hover {
+  color: var(--text);
+}
+:root:not([data-layout="glasses"]) .palette-open {
+  height: 28px; padding: 0 9px; gap: 6px;
+  font-size: 13px; font-weight: 500; line-height: 1;
+  border: 0; border-radius: 7px; box-shadow: none;
+  background: transparent;
+  color: var(--muted);
+}
+:root:not([data-layout="glasses"]):not([data-layout="tabbed"]) .palette-open::before {
+  content: ""; width: 14px; height: 14px; flex: none; background: currentColor;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='6.8' cy='6.8' r='4.3' fill='none' stroke='black' stroke-width='1.5'/%3E%3Cpath d='m10 10 3.5 3.5' stroke='black' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+:root:not([data-layout="glasses"]) .palette-open:hover {
+  background: color-mix(in srgb, var(--tabbar) 50%, var(--term-bg)); color: var(--text);
+}
+:root:not([data-layout="glasses"]) .palette-open:focus-visible {
+  outline: 2px solid var(--muted); outline-offset: 2px;
+}
+:root:not([data-layout="glasses"]) .palette-open kbd {
+  display: inline-flex; align-items: center; gap: 1px; transform: none;
+  margin-left: 5px; padding: 0; font: inherit; line-height: 1;
+  border: 0; background: transparent; color: inherit;
+}
+.palette-open .palette-command { width: 14px; height: 14px; padding: 1px; box-sizing: border-box; flex: none; }
+#tab-add:disabled { display: none !important; }
+#palette-open:disabled { opacity: .35; pointer-events: none; cursor: default; }
+:root:not([data-layout="glasses"]) .tabbar-right { padding-left: 4px; }
+@media (max-width: 700px) {
+  :root:not([data-layout="glasses"]) .palette-open kbd { display: none; }
+}
+
+/* Browsers do not reserve the native traffic-light region. Keep notch clearance in landscape. */
+:root:not([data-layout="glasses"]):not([data-native-client="true"]) #tabbar {
+  padding-left: calc(8px + env(safe-area-inset-left));
+  padding-right: calc(12px + env(safe-area-inset-right));
+}
+:root[data-layout="glasses"] .native-add-icon::before { content: "+"; }
+@media (any-pointer: coarse) {
+  /* The plus scrolls with the tabs on touch surfaces, so the right edge is a plain clip.
+     Only a fixed control beside the scroller needs the rounded join. */
+  :root:not([data-layout="glasses"]):not([data-native-client="true"]) .tabbar-scroll {
+    clip-path: inset(4px 0 0 round 8px 0 0 0);
+  }
+  /* Leave room to the left of the scroll clip for the active tab's concave foot.
+     The upper edge stays inset, while the fill can sweep left at the bottom. */
+  :root[data-layout="tabbed"] .tabbar-scroll {
+    padding-left: 12px; margin-left: -12px;
+  }
+  :root[data-layout="tabbed"] #session-disconnect { position: relative; z-index: 1; }
+  /* Continue the foot at the scroll boundary only when the active tab is clipped.
+     A fully visible tab already draws its own foot; adding another makes a double notch. */
+  :root[data-layout="tabbed"] #tabbar[data-active-left-edge] #session-disconnect::after {
+    content: ""; position: absolute; right: 6px; bottom: -.5px; width: 6px; height: 6px;
+    pointer-events: none;
+    background: radial-gradient(circle at 0 0, transparent 5.5px, var(--term-bg) 6px);
+  }
+  :root:not([data-layout="glasses"]):not([data-native-client="true"]) #tabbar {
+    --mobile-chrome-top: max(12px, env(safe-area-inset-top));
+    height: calc(var(--native-bar-height) + var(--mobile-chrome-top));
+    padding-top: var(--mobile-chrome-top);
+    padding-left: calc(4px + env(safe-area-inset-left));
+    /* No pinned control on the right: let scrolling tabs reach the viewport edge. */
+    padding-right: env(safe-area-inset-right);
+  }
+  :root:not([data-layout="glasses"]):not([data-native-client="true"]) .tabbar-right {
+    display: none;
+  }
+  :root:not([data-layout="glasses"]):not([data-native-client="true"]) #palette-open { display: none; }
+  :root:not([data-layout="glasses"]):not([data-native-client="true"]) #tab-add {
+    position: relative; right: auto;
+  }
+  :root:not([data-layout="glasses"]):not([data-native-client="true"]) .rl-tab-close { display: none; }
+  /* Without the close control, the label needs equal space on both sides. */
+  :root:not([data-layout="glasses"]):not([data-native-client="true"]) .rl-tab-label { margin-right: 0; text-align: center; }
+  :root:not([data-layout="glasses"]):not([data-native-client="true"]) #tab-add { display: flex; }
+}
+
+/* Touch browsers can keep :hover on the tab where a swipe began after the finger lifts.
+   Keep the pressed feedback, but never let that synthetic hover look like a second selection. */
+@media (hover: none) {
+  :root:not([data-layout="glasses"]) :is(.rl-tab, .tab-add):hover:not(.on):not(:active):not(.menu-open):not(.dragging) {
+    --native-tab-fill: transparent;
+    color: var(--muted);
+  }
+  :root:not([data-layout="glasses"]) :is(.rl-tab, .tab-add):hover:not(.on):not(:active):not(.menu-open):not(.dragging)::after {
+    content: none;
+  }
+  :root:not([data-layout="glasses"]) :is(.rl-tab, .tab-add):active:not(.on) {
+    --native-tab-fill: color-mix(in srgb, var(--tabbar) 50%, var(--term-bg));
+    color: var(--text);
+  }
+  :root:not([data-layout="glasses"]) :is(.rl-tab, .tab-add):active:not(.on)::after {
+    content: "";
+  }
+}
+
+/* Pinned touch windows use the shared footer; their picture gets the former control row back. */
+.mobile-window-controls { display: none; }
+@media (any-pointer: coarse) {
+  :root:not([data-layout="glasses"]) #statusbar { padding-right: calc(14px + env(safe-area-inset-right)); }
+  :root[data-layout="tabbed"] .win-titlebar { display: none; }
+  :root[data-layout="tabbed"][data-tab="sim"] .mobile-window-controls:not([hidden]) {
+    display: flex; align-items: center; gap: 0; margin-left: auto; flex: none;
+  }
+  /* Keep connection state and ping visible alongside the 44px window controls, even on narrow phones. */
+  :root[data-layout="tabbed"][data-tab="sim"] #statusbar {
+    padding-left: calc(10px + env(safe-area-inset-left));
+    padding-right: calc(10px + env(safe-area-inset-right));
+  }
+  :root[data-layout="tabbed"][data-tab="sim"] #status-cells {
+    display: flex; flex-direction: column; align-items: flex-start; justify-content: center;
+    font-size: 10px; line-height: 13px;
+  }
+  :root[data-layout="tabbed"][data-tab="sim"] #status-cells .status-divider,
+  :root[data-layout="tabbed"][data-tab="sim"] #status-cells .status-detail,
+  :root[data-layout="tabbed"][data-tab="sim"] #status-cells .status-cell:not([data-cell="state"]):not([data-cell="rtt"]) { display: none; }
+  :root[data-layout="tabbed"][data-tab="sim"] #status-cells .status-cell {
+    max-width: 100%; overflow: hidden; text-overflow: ellipsis;
+  }
+  :root[data-layout="tabbed"][data-tab="sim"] #keyboard-open { margin-left: 0; padding: 0; }
+  :root:not([data-layout="glasses"]) .mobile-window-controls button {
+    display: flex; align-items: center; justify-content: center; width: 44px; flex: none;
+    border: 0; border-radius: 8px; background: transparent; padding: 0; height: var(--statusbar-h);
+    font: 500 12px var(--font-ui); color: var(--muted); white-space: nowrap; cursor: pointer;
+  }
+  :root[data-layout="tabbed"] .mobile-window-controls button:not(.mobile-pointer-toggle):is(:hover, :active, [aria-pressed="true"], [aria-expanded="true"]) { color: #fff; }
+}
+
+@media (any-pointer: coarse) {
+  :root[data-layout="floating"] .mobile-window-controls:not([hidden]) { display: flex; margin-left: auto; }
+  :root[data-layout="floating"] .mobile-window-controls button:not(.mobile-pointer-toggle) { display: none; }
+  :root[data-layout="floating"] .mobile-pointer-toggle {
+    width: 44px; height: 44px; display: grid; place-items: center; border: 0;
+    background: transparent; color: var(--muted); padding: 0;
+  }
+  :root:not([data-layout="glasses"]) .mobile-window-controls .mobile-pointer-toggle:active { color: #fff; }
+}
+
+.mobile-window-controls .mobile-pointer-toggle[hidden] { display: none !important; }
+
+/* Desktop simulator windows keep their device shape; fullscreen is a mobile affordance. */
+:root[data-layout="floating"] .source-window[data-source^="sim:"] .win-fullscreen { display: none; }
+
+.mobile-window-controls button[hidden] { display: none !important; }
+
+/* Simulator Keyboard targets the guest, so do not show the client keyboard beside it. */
+#statusbar[data-simulator-controls="true"] #keyboard-open { display: none; }
+@media (any-pointer: coarse) {
+  :root[data-layout="floating"] .mobile-window-controls button[aria-label="Home"]:not([hidden]),
+  :root[data-layout="floating"] .mobile-window-controls button[aria-label="Keyboard"]:not([hidden]) { display: flex; }
+}

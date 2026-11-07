@@ -1,0 +1,19 @@
+load(":product-profile.bzl", "product_profile")
+
+product_profile(name = "profile", build_setting_default = "development", visibility = ["//visibility:public"])
+
+config_setting(
+    name = "publication",
+    flag_values = {":profile": "publication"},
+)
+
+genrule(
+    name = "native_product_features",
+    srcs = ["product-features.json", "generate_product_features.py", ":profile"],
+    outs = ["ProductFeatures.swift"],
+    cmd = "python3 $(location generate_product_features.py) $(location product-features.json) " + select({
+        ":publication": "publication",
+        "//conditions:default": "development",
+    }) + " $@",
+    visibility = ["//visibility:public"],
+)

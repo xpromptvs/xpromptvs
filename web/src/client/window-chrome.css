@@ -1,0 +1,48 @@
+/* Floating windows share the session chrome's palette. The 40px band is also WIN_CHROME_PX:
+   capture sizing removes precisely this height before asking the host for a new window size. */
+.win-control-icon { display: none; }
+:root[data-layout="floating"] .source-window {
+  background: var(--window-body); border: 1px solid #ffffff14; border-radius: var(--window-radius);
+  box-shadow: 0 8px 24px #0003;
+}
+:root[data-layout="floating"] .source-window.focused {
+  border-color: #ffffff26; box-shadow: 0 16px 40px #0006, 0 2px 8px #0003;
+}
+:root[data-layout="floating"] .win-titlebar {
+  height: var(--window-header-h); padding: 0 7px 0 14px; gap: 9px;
+  background: var(--window-header); border-bottom: 0;
+}
+:root[data-layout="floating"] .win-title {
+  font: 500 var(--window-title-size)/1.2 var(--font-ui); color: var(--window-muted);
+}
+:root[data-layout="floating"] .focused .win-title { color: var(--window-text); }
+:root[data-layout="floating"] .win-dot {
+  display: none;
+}
+:root[data-layout="floating"] .has-keyboard .win-title { color: #fff; }
+:root[data-layout="floating"] .win-controls {
+  gap: 2px; padding-left: 8px; background: var(--window-header);
+}
+:root[data-layout="floating"] .win-controls > button {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; flex: none; padding: 0;
+  border: 0; border-radius: 6px; background: transparent; color: var(--window-muted);
+  cursor: pointer; line-height: 1;
+}
+:root[data-layout="floating"] .win-controls > .win-zoom { display: none; }
+:root[data-layout="floating"] .win-control-icon { display: inline-flex; }
+:root[data-layout="floating"] .win-control-label { display: none; }
+:root[data-layout="floating"] .win-controls > button:hover,
+:root[data-layout="floating"] .win-controls > button:active,
+:root[data-layout="floating"] .win-controls > button[aria-pressed="true"],
+:root[data-layout="floating"] .win-controls > button[aria-expanded="true"] { color: #fff; background: transparent; }
+:root[data-layout="floating"] .win-controls > button:focus-visible { outline: 1px solid var(--window-muted); outline-offset: 1px; }
+:root[data-layout="floating"] .win-controls > .win-minimize { margin-left: 9px; position: relative; }
+:root[data-layout="floating"] .win-minimize::before {
+  content: ""; position: absolute; left: -6px; top: 7px; width: 1px; height: 14px; background: #ffffff12;
+}
+:root[data-layout="floating"] .win-controls > .win-close:hover { color: #ff8682; }
+:root[data-layout="floating"] .win-audio-badge[data-audio] {
+  font: 400 10px/1.2 var(--font-ui); border: 0; padding: 0; margin-inline-start: 0;
+}
+:root[data-layout="floating"] .win-audio-badge[data-audio="muted"] { display: none; }

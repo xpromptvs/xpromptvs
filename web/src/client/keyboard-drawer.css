@@ -1,0 +1,119 @@
+#keyboard-open, .keyboard-drawer { display: none; }
+@media (any-pointer: coarse) {
+  :root:not([data-layout="glasses"]) { --keystrip-h: 0px; --statusbar-h: 44px; }
+  :root:not([data-layout="glasses"]) #keyboard-open {
+    display: flex; align-items: center; justify-content: center; margin-left: auto; flex: none;
+    border: 0; background: transparent; color: var(--muted); padding: 0; width: 44px;
+    height: var(--statusbar-h); font: 500 12px var(--font-ui); cursor: pointer;
+    border-radius: 8px;
+  }
+  :root:not([data-layout="glasses"]) #keyboard-open:is(:hover, :active, [aria-expanded="true"]) { color: #fff; }
+  :root:not([data-layout="glasses"]) .keyboard-drawer {
+    opacity: 0; visibility: hidden; pointer-events: none;
+    transform: scale(.97); transform-origin: center bottom;
+    transition: opacity 140ms ease-out, transform 160ms ease-out, visibility 0s linear 160ms;
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px;
+    position: absolute; z-index: 9; left: auto; right: max(8px, env(safe-area-inset-right));
+    width: min(520px, calc(100% - 16px)); box-sizing: border-box;
+    bottom: calc(var(--statusbar-h) + var(--safe-b) + 72px);
+    --keyboard-edge-padding: 8px;
+    /* The 42px header centers the 36px segmented control with 3px above it. */
+    padding: calc(var(--keyboard-edge-padding) - 3px) max(6px, env(safe-area-inset-right)) 8px max(6px, env(safe-area-inset-left));
+    background: var(--tabbar); border-radius: 16px;
+    box-shadow: 0 8px 24px #0003, inset 0 1px #ffffff0b;
+    max-height: calc(100% - var(--statusbar-h) - var(--safe-b) - 24px); overflow-y: auto;
+  }
+  :root:not([data-layout="glasses"]) .keyboard-drawer-head {
+    grid-column: 1 / -1; order: -3; display: grid; grid-template-columns: 32px minmax(0, 1fr) 32px; align-items: center; gap: 2px;
+    height: 42px; margin-bottom: 2px; padding: 0 4px; touch-action: none; cursor: grab; font: 500 12px var(--font-ui); color: var(--muted);
+  }
+  :root:not([data-layout="glasses"]) .keyboard-drawer-head span { display: flex; align-items: center; justify-content: center; font-size: 21px; padding: 0; }
+  :root:not([data-layout="glasses"]) .keyboard-drawer-head button { border: 0; background: none; color: var(--muted); font: inherit; min-height: 36px; }
+  :root:not([data-layout="glasses"]) .keyboard-drawer-head > button:last-child { display: flex; align-items: center; justify-content: center; padding: 0; width: 32px; height: 32px; min-height: 32px; border-radius: 8px; background: #30302f; box-shadow: 0 1px 0 #0008; cursor: pointer; }
+  :root:not([data-layout="glasses"]) .keyboard-drawer .keyboard-letter-row { grid-column: 1 / -1; display: flex; gap: 5px; }
+  :root:not([data-layout="glasses"]) .keyboard-drawer .key-cap {
+    flex: 1; min-width: 0; height: 40px; padding: 0 2px; border: 0; border-radius: 7px;
+    background: #30302f; color: var(--text); box-shadow: 0 1px 0 #0008;
+    font: 400 17px var(--font-ui); touch-action: none;
+  }
+  :root:not([data-layout="glasses"]) .keyboard-drawer .key-cap:active, :root:not([data-layout="glasses"]) .keyboard-drawer .key-mod[data-state="held"] {
+    background: #565650; color: #fff;
+  }
+  :root:not([data-layout="glasses"]) .keyboard-drawer [data-key-id="char:enter"] { flex: 1.7; font-size: 12px; }
+  :root:not([data-layout="glasses"]) .keyboard-drawer [data-key-id="char:backspace"] { flex: 1.7; }
+  :root:not([data-layout="glasses"]) .keyboard-drawer .keyboard-space { flex: 4; font-size: 12px; }
+  :root:not([data-layout="glasses"]) .keyboard-drawer .keyboard-symbol-row { display: none; }
+  :root:not([data-layout="glasses"]) .keyboard-drawer.keyboard-symbols .keyboard-letter-row:not(.keyboard-symbol-row):not(.keyboard-space-row) { display: none; }
+  :root:not([data-layout="glasses"]) .keyboard-drawer.keyboard-symbols .keyboard-symbol-row { display: flex; }
+  :root:not([data-layout="glasses"]) .keyboard-drawer .key-strip-scroll, :root:not([data-layout="glasses"]) .keyboard-drawer .key-strip-fixed {
+    height: 36px; gap: 4px; align-items: stretch;
+  }
+  :root:not([data-layout="glasses"]) .keyboard-drawer .key-strip-scroll .key-cap, :root:not([data-layout="glasses"]) .keyboard-drawer .key-strip-fixed .key-cap {
+    height: 36px; min-width: 29px; font-size: 11px; background: #252524;
+  }
+  :root:not([data-layout="glasses"]) .keyboard-drawer .key-strip-fixed .key-cap { min-width: 34px; }
+  :root:not([data-layout="glasses"]) .keyboard-drawer .key-strip-fixed [data-key-id="kbd"] { display: none; }
+  :root:not([data-layout="glasses"]) .keyboard-drawer .key-strip-more {
+    order: -2; grid-column: 1 / -1; height: auto; display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px;
+  }
+  :root:not([data-layout="glasses"]) .keyboard-drawer .key-strip-more .key-cap { font-size: 12px; height: 34px; }
+  :root[data-fullscreen]:not([data-layout="glasses"]) #statusbar { display: none; }
+  :root[data-fullscreen]:not([data-layout="glasses"]) .source-window.fullscreen { padding-bottom: 0; }
+}
+
+@media (any-pointer: coarse) {
+  :root:not([data-layout="glasses"]) .keyboard-drawer.keyboard-compact { width: min(310px, calc(100% - 16px)); --keyboard-edge-padding: 12px; }
+  :root:not([data-layout="glasses"]) .keyboard-drawer .keyboard-compact-pad { display: none; }
+  :root:not([data-layout="glasses"]) .keyboard-drawer.keyboard-compact > :not(.keyboard-drawer-head):not(.keyboard-compact-pad) { display: none; }
+  :root:not([data-layout="glasses"]) .keyboard-drawer.keyboard-compact .keyboard-compact-pad {
+    display: grid; grid-template-columns: 1fr 1.35fr; gap: 16px; grid-column: 1 / -1; padding: 0 4px 4px;
+  }
+  :root:not([data-layout="glasses"]) .keyboard-compact-actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 3px; align-content: center; }
+  :root:not([data-layout="glasses"]) .keyboard-dpad { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 40px); gap: 3px; }
+  :root:not([data-layout="glasses"]) .keyboard-dpad [data-pad-key="up"] { grid-area: 1 / 2; }
+  :root:not([data-layout="glasses"]) .keyboard-dpad [data-pad-key="left"] { grid-area: 2 / 1; }
+  :root:not([data-layout="glasses"]) .keyboard-dpad [data-pad-key="alt"] { grid-area: 3 / 1; }
+  :root:not([data-layout="glasses"]) .keyboard-dpad [data-pad-key="space"] { grid-area: 3 / 2; }
+  :root:not([data-layout="glasses"]) .keyboard-dpad [data-pad-key="enter"] { grid-area: 3 / 3; }
+  :root:not([data-layout="glasses"]) .keyboard-dpad [data-pad-key="right"] { grid-area: 2 / 3; }
+  :root:not([data-layout="glasses"]) .keyboard-dpad [data-pad-key="down"] { grid-area: 2 / 2; }
+  :root:not([data-layout="glasses"]) .keyboard-compact-actions .key-cap { font-size: 14px; }
+}
+
+@media (any-pointer: coarse) {
+  :root:not([data-layout="glasses"]) .keyboard-mode {
+    display: flex; justify-self: center; gap: 2px; padding: 3px;
+    background: #ffffff08; border-radius: 9px; box-shadow: inset 0 0 0 1px #ffffff0a;
+  }
+  :root:not([data-layout="glasses"]) .keyboard-mode button {
+    min-height: 30px; padding: 0 9px; border-radius: 6px;
+    color: var(--muted); font: 500 12px var(--font-ui); cursor: pointer;
+  }
+  :root:not([data-layout="glasses"]) .keyboard-mode button[aria-pressed="true"] {
+    background: #41413d; color: var(--text); box-shadow: 0 1px 3px #0005;
+  }
+  :root:not([data-layout="glasses"]) .keyboard-mode button:focus-visible { outline: 2px solid var(--text); outline-offset: 1px; }
+}
+
+@media (any-pointer: coarse) {
+  :root:not([data-layout="glasses"]) .keyboard-drawer .key-cap.is-pressed,
+  :root:not([data-layout="glasses"]) .keyboard-drawer .key-cap:active,
+  :root:not([data-layout="glasses"]) .keyboard-drawer .key-mod[data-state="held"] {
+    background: #62625b; color: #fff; box-shadow: inset 0 1px 2px #0003;
+  }
+}
+
+@media (any-pointer: coarse) {
+  :root:not([data-layout="glasses"]) .keyboard-drawer-head > button:last-child:hover { background: #41413d; color: var(--text); }
+  :root:not([data-layout="glasses"]) .keyboard-drawer-head > button:last-child:active { background: #62625b; color: #fff; }
+}
+
+@media (any-pointer: coarse) {
+  :root:not([data-layout="glasses"]) .keyboard-drawer.is-open {
+    opacity: 1; visibility: visible; pointer-events: auto; transform: scale(1);
+    transition-delay: 0s;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-layout="glasses"]) .keyboard-drawer { transition: none; transform: none; }
+}

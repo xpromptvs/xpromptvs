@@ -1,0 +1,190 @@
+{
+  "schemaVersion": 1,
+  "evidenceKind": "flexfec-controller-candidates",
+  "candidates": [
+    {
+      "id": "ll25-d1500-h250",
+      "policy": {
+        "schemaVersion": 1,
+        "controllerVersion": "ll25-d1500-h250",
+        "evaluationIntervalMilliseconds": 100,
+        "minimumFinalizedPackets": 64,
+        "reorderingGraceMilliseconds": 25,
+        "upHoldWindows": 2,
+        "downCleanMilliseconds": 1500,
+        "transitionHoldMilliseconds": 250,
+        "feedbackStaleMilliseconds": 750,
+        "lowLossBasisPoints": 25,
+        "mediumLossBasisPoints": 100,
+        "highLossBasisPoints": 300,
+        "burstWindowMilliseconds": 50,
+        "mediumBurstPackets": 2,
+        "highBurstPackets": 4,
+        "queueTrendMilliseconds": 3,
+        "repairLossMinimumPackets": 8,
+        "repairLossCapBasisPoints": 5000
+      }
+    },
+    {
+      "id": "ll25-d1500-h500",
+      "policy": {
+        "schemaVersion": 1,
+        "controllerVersion": "ll25-d1500-h500",
+        "evaluationIntervalMilliseconds": 100,
+        "minimumFinalizedPackets": 64,
+        "reorderingGraceMilliseconds": 25,
+        "upHoldWindows": 2,
+        "downCleanMilliseconds": 1500,
+        "transitionHoldMilliseconds": 500,
+        "feedbackStaleMilliseconds": 750,
+        "lowLossBasisPoints": 25,
+        "mediumLossBasisPoints": 100,
+        "highLossBasisPoints": 300,
+        "burstWindowMilliseconds": 50,
+        "mediumBurstPackets": 2,
+        "highBurstPackets": 4,
+        "queueTrendMilliseconds": 3,
+        "repairLossMinimumPackets": 8,
+        "repairLossCapBasisPoints": 5000
+      }
+    },
+    {
+      "id": "ll25-d2500-h250",
+      "policy": {
+        "schemaVersion": 1,
+        "controllerVersion": "ll25-d2500-h250",
+        "evaluationIntervalMilliseconds": 100,
+        "minimumFinalizedPackets": 64,
+        "reorderingGraceMilliseconds": 25,
+        "upHoldWindows": 2,
+        "downCleanMilliseconds": 2500,
+        "transitionHoldMilliseconds": 250,
+        "feedbackStaleMilliseconds": 750,
+        "lowLossBasisPoints": 25,
+        "mediumLossBasisPoints": 100,
+        "highLossBasisPoints": 300,
+        "burstWindowMilliseconds": 50,
+        "mediumBurstPackets": 2,
+        "highBurstPackets": 4,
+        "queueTrendMilliseconds": 3,
+        "repairLossMinimumPackets": 8,
+        "repairLossCapBasisPoints": 5000
+      }
+    },
+    {
+      "id": "ll25-d2500-h500",
+      "policy": {
+        "schemaVersion": 1,
+        "controllerVersion": "ll25-d2500-h500",
+        "evaluationIntervalMilliseconds": 100,
+        "minimumFinalizedPackets": 64,
+        "reorderingGraceMilliseconds": 25,
+        "upHoldWindows": 2,
+        "downCleanMilliseconds": 2500,
+        "transitionHoldMilliseconds": 500,
+        "feedbackStaleMilliseconds": 750,
+        "lowLossBasisPoints": 25,
+        "mediumLossBasisPoints": 100,
+        "highLossBasisPoints": 300,
+        "burstWindowMilliseconds": 50,
+        "mediumBurstPackets": 2,
+        "highBurstPackets": 4,
+        "queueTrendMilliseconds": 3,
+        "repairLossMinimumPackets": 8,
+        "repairLossCapBasisPoints": 5000
+      }
+    },
+    {
+      "id": "ll50-d1500-h250",
+      "policy": {
+        "schemaVersion": 1,
+        "controllerVersion": "ll50-d1500-h250",
+        "evaluationIntervalMilliseconds": 100,
+        "minimumFinalizedPackets": 64,
+        "reorderingGraceMilliseconds": 25,
+        "upHoldWindows": 2,
+        "downCleanMilliseconds": 1500,
+        "transitionHoldMilliseconds": 250,
+        "feedbackStaleMilliseconds": 750,
+        "lowLossBasisPoints": 50,
+        "mediumLossBasisPoints": 100,
+        "highLossBasisPoints": 300,
+        "burstWindowMilliseconds": 50,
+        "mediumBurstPackets": 2,
+        "highBurstPackets": 4,
+        "queueTrendMilliseconds": 3,
+        "repairLossMinimumPackets": 8,
+        "repairLossCapBasisPoints": 5000
+      }
+    },
+    {
+      "id": "ll50-d1500-h500",
+      "policy": {
+        "schemaVersion": 1,
+        "controllerVersion": "ll50-d1500-h500",
+        "evaluationIntervalMilliseconds": 100,
+        "minimumFinalizedPackets": 64,
+        "reorderingGraceMilliseconds": 25,
+        "upHoldWindows": 2,
+        "downCleanMilliseconds": 1500,
+        "transitionHoldMilliseconds": 500,
+        "feedbackStaleMilliseconds": 750,
+        "lowLossBasisPoints": 50,
+        "mediumLossBasisPoints": 100,
+        "highLossBasisPoints": 300,
+        "burstWindowMilliseconds": 50,
+        "mediumBurstPackets": 2,
+        "highBurstPackets": 4,
+        "queueTrendMilliseconds": 3,
+        "repairLossMinimumPackets": 8,
+        "repairLossCapBasisPoints": 5000
+      }
+    },
+    {
+      "id": "ll50-d2500-h250",
+      "policy": {
+        "schemaVersion": 1,
+        "controllerVersion": "ll50-d2500-h250",
+        "evaluationIntervalMilliseconds": 100,
+        "minimumFinalizedPackets": 64,
+        "reorderingGraceMilliseconds": 25,
+        "upHoldWindows": 2,
+        "downCleanMilliseconds": 2500,
+        "transitionHoldMilliseconds": 250,
+        "feedbackStaleMilliseconds": 750,
+        "lowLossBasisPoints": 50,
+        "mediumLossBasisPoints": 100,
+        "highLossBasisPoints": 300,
+        "burstWindowMilliseconds": 50,
+        "mediumBurstPackets": 2,
+        "highBurstPackets": 4,
+        "queueTrendMilliseconds": 3,
+        "repairLossMinimumPackets": 8,
+        "repairLossCapBasisPoints": 5000
+      }
+    },
+    {
+      "id": "ll50-d2500-h500",
+      "policy": {
+        "schemaVersion": 1,
+        "controllerVersion": "ll50-d2500-h500",
+        "evaluationIntervalMilliseconds": 100,
+        "minimumFinalizedPackets": 64,
+        "reorderingGraceMilliseconds": 25,
+        "upHoldWindows": 2,
+        "downCleanMilliseconds": 2500,
+        "transitionHoldMilliseconds": 500,
+        "feedbackStaleMilliseconds": 750,
+        "lowLossBasisPoints": 50,
+        "mediumLossBasisPoints": 100,
+        "highLossBasisPoints": 300,
+        "burstWindowMilliseconds": 50,
+        "mediumBurstPackets": 2,
+        "highBurstPackets": 4,
+        "queueTrendMilliseconds": 3,
+        "repairLossMinimumPackets": 8,
+        "repairLossCapBasisPoints": 5000
+      }
+    }
+  ]
+}

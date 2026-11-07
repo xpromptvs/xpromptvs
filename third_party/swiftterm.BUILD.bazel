@@ -1,0 +1,8 @@
+# Injected into the SwiftTerm archive. Only the sources are exposed; the swift_library
+# itself is declared in //third_party/swiftterm, because it needs to combine these with a
+# locally-authored shim file that cannot live inside an external repository.
+filegroup(
+    name = "srcs",
+    srcs = glob(["Sources/SwiftTerm/**/*.swift"]),
+    visibility = ["//visibility:public"],
+)

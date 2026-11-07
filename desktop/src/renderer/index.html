@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en" data-view="home" data-theme="dark">
+<head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; font-src 'self'; script-src 'self'; img-src 'self' data:;"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Xpromptvs</title><link rel="stylesheet" href="shellstorm/shell.css"><link rel="stylesheet" href="style.css"><script src="shellstorm/anime.umd.min.js" defer></script><script src="shellstorm/motion-debug.js" defer></script>
+<script src="shellstorm/glow-raster.js" defer></script>
+<script src="shellstorm/connection-motion.js" defer></script>
+<script src="shellstorm/session-motion.js" defer></script>
+<script src="shellstorm/computer-motion.js" defer></script>
+<script src="shellstorm/motion.js" defer></script>
+<link rel="stylesheet" href="./shellstorm/motion.css" />
+</head>
+<body class="ss-home">
+<!-- **THE DASHBOARD IS BUILT, NOT WRITTEN TWICE.** The header, "Your workspace, anywhere", quick
+     connect, My Devices, Settings and the profile alert all come from
+     `web/src/shared/dashboard.ts`, which the browser client mounts too. This element is the host;
+     the templates below are what only a Mac has, and `main.ts` moves them into the page's slots.
+     `docs/ui-design.md`. -->
+<main id="home"></main>
+
+<template id="home-extras-lead">
+  <section class="ss-sharing-section" aria-labelledby="home-sharing-heading">
+  <div class="ss-sharing-card"><div><h2 id="home-sharing-heading" class="ss-sharing-title">Share this Mac</h2><p id="local-state" class="ss-device-state">Use this Mac from your other devices.</p></div><button id="door-share" type="button">Set up sharing</button></div>
+  </section>
+</template>
+
+<template id="home-extras-settings">
+  <section class="ss-preferences-group" aria-labelledby="settings-remote-heading">
+   <h2 id="settings-remote-heading">Remote access</h2>
+   <label class="ss-settings-row"><span>Share when the app opens<small>Automatically make this Mac available to your other devices.</small></span><input type="checkbox" id="auto-share"></label>
+   <label class="ss-settings-row"><span>Allow updates from other devices<small>Let your trusted devices install updates and restart Xpromptvs.</small></span><input type="checkbox" id="allow-remote-updates"></label>
+   <div class="ss-settings-row ss-settings-action-row"><span>Sharing<small>This Mac stays awake while sharing.</small></span><button id="settings-sharing-open" type="button">Sharing settings</button></div>
+  </section>
+  <section id="e2e-settings" class="ss-settings-e2e" aria-label="Your devices">
+   <h2>Your devices</h2>
+   <div class="ss-settings-card">
+    <div class="ss-settings-account"><div class="ss-settings-copy"><p id="e2e-settings-body"></p><p class="ss-settings-help">Use the same passkey on your other devices to connect to your Macs.</p></div><button id="settings-account-action" type="button">Sign in</button></div>
+    <div class="e2e-setup-actions" id="e2e-settings-action" hidden></div>
+    <div class="ss-settings-details" role="region" aria-label="Device connection details">
+     <div class="ss-settings-row" id="e2e-settings-group-row" hidden><span>Device group code<small>Devices using the same passkey share this code.</small></span><code id="e2e-settings-group"></code></div>
+     <div id="e2e-settings-code-row" class="ss-settings-code-row"><p id="e2e-settings-technical"></p><div id="e2e-settings-code-actions"></div></div>
+     <div class="ss-settings-row" id="e2e-settings-device-row" hidden><span>Device ID<small>Identifies this Mac when troubleshooting a connection.</small></span><code id="e2e-settings-device"></code></div>
+     <section id="e2e" class="e2e-row" aria-label="Remote access status" hidden></section>
+    </div>
+   </div>
+  </section>
+  <section class="ss-preferences-group"><h2>Privacy</h2><div class="ss-settings-card"><span class="ss-settings-title">Private connections</span><p class="ss-settings-help">Your screens, sound, and terminal sessions are encrypted between your devices.</p></div></section>
+</template>
+
+<!-- **SIGNING IN WITH A PASSKEY, ON THIS MAC** (2026-10-06): the browser's identity panel, one
+     implementation for both dashboards (`web/src/shared/e2e-setup.ts`), driven by the app's native
+     passkey ceremony (`main.ts`, `macSetup`). A modal `<dialog>`: the top layer, Esc, a backdrop. -->
+<dialog id="e2e-setup" class="ss-dialog e2e-setup" aria-label="Sign in with a passkey">
+ <h2 id="e2e-setup-title"></h2>
+ <p id="e2e-setup-body"></p>
+ <code id="e2e-setup-identity" class="e2e-setup-identity" hidden></code>
+ <div id="e2e-setup-actions" class="ss-dialog-actions"></div>
+</dialog>
+
+<main id="share" hidden>
+ <header class="sharing-header">Sharing</header>
+ <div class="ss-page-scroll"><div class="ss-content share-content">
+  <section class="sharing-section"><h2 class="ss-group-heading">This Mac</h2>
+   <div class="sharing-group"><div class="sharing-row"><div><span class="sharing-label">Share this Mac</span><p id="status" role="status">Not sharing.</p></div><button id="start-sharing" type="button">Start sharing</button><button id="stop" type="button" hidden>Stop sharing</button></div></div>
+   <p class="sharing-note">Access your windows, audio, and terminals from another device. This Mac stays awake while sharing.</p>
+  </section>
+  <section class="sharing-section" id="share-connection" hidden><h2 class="ss-group-heading">Connect from another device</h2>
+   <div class="sharing-scan"><div id="qr" hidden><img id="qr-img" alt="Connect QR code"></div><p class="hint">Scan to connect</p></div>
+   <div class="sharing-group">
+    <div class="sharing-row"><div><span class="sharing-label">Pairing code</span><code id="pairing-code">…</code></div><button id="copy" type="button" aria-label="Copy pairing code">Copy</button></div>
+    <div class="sharing-row sharing-link" id="link-row" hidden><div><span id="link-hint" class="sharing-label" hidden>Connection link</span><code id="connect-url"></code></div><button id="copy-link" type="button" aria-label="Copy connection link">Copy</button></div>
+   </div><p id="published" class="published sharing-note" hidden></p>
+  </section>
+  <section class="sharing-section"><h2 class="ss-group-heading">Privacy</h2><div class="sharing-group"><div class="sharing-row"><div><span class="sharing-label">Screen curtain</span><p>Hide the display while keeping remote access.</p></div><button id="curtain" type="button" aria-pressed="false">Lock</button></div></div><p class="sharing-note">Press ⌃⌥⌘U on this Mac to unlock.</p></section>
+  <section class="sharing-section"><h2 class="ss-group-heading">Permissions</h2><div id="perms" class="sharing-group" aria-label="Mac permissions"></div></section>
+ </div></div>
+</main>
+<script type="module" src="main.js"></script></body></html>

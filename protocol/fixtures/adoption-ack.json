@@ -1,0 +1,8 @@
+{
+  "_comment": "Add device by code: the new Mac's word on the chain it was issued, sent inside the pair session (RdevCore AdoptionAck, web/src/client/adopt.ts adoptionAck). Each case: the JSON as it is sent, and what it parses to; `not` are messages that are NOT one.",
+  "cases": [
+    { "json": "{\"t\":\"adopted\"}", "kind": "adopted" },
+    { "json": "{\"t\":\"adopt-refused\",\"reason\":\"root-not-adopted\"}", "kind": "refused", "reason": "root-not-adopted" }
+  ],
+  "not": ["{\"t\":\"offer\",\"sdp\":\"v=0\"}", "{\"adopted\":true}", "not json"]
+}

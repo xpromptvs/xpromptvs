@@ -1,0 +1,34 @@
+load("@rules_apple//apple:macos.bzl", "macos_command_line_application")
+load("@rules_swift//swift:swift.bzl", "swift_library")
+
+# TEST-ONLY. Writes protocol/fixtures/tmux-snapshot/<case>.emitted.bin and <case>.cursor.json: tmux's
+# own snapshot of each glyph case of the corpus, read the way the product reads one and emitted, for
+# web/test/term-tmux-fidelity.test.ts to replay into the client's tmux provider. RdevHostKitTests'
+# TmuxSnapshotAgreementTests.testATmuxTabCountsAsTmuxDoes fails when these are stale, naming this.
+#
+# Drives a PRIVATE tmux server (RdevTmuxRig's PrivateTmux: a unique `-L` name, `-f /dev/null` on every
+# command, killed and its socket file removed before it exits) — never the user's server or config.
+# Needs the tmux the glyph model was measured on (protocol/fixtures/tmux-glyphs.json); it refuses
+# another. In Bazel, like //tools/TermSnapshotFixtures, because it must run the product's REAL code.
+#
+#   bazelisk run //tools/TmuxSnapshotFixtures -- "$PWD/protocol/fixtures"
+swift_library(
+    name = "TmuxSnapshotFixturesLib",
+    testonly = True,
+    srcs = ["main.swift"],
+    module_name = "TmuxSnapshotFixtures",
+    deps = [
+        "//host/RdevCore:RdevCore",
+        "//host/RdevHostKit:RdevTmuxRig",
+    ],
+)
+
+macos_command_line_application(
+    name = "TmuxSnapshotFixtures",
+    testonly = True,
+    # Its own bundle id: it needs no permission and must not share dev.rdev.host's TCC identity.
+    bundle_id = "dev.rdev.tmuxsnapshotfixtures",
+    minimum_os_version = "26.0",
+    visibility = ["//visibility:public"],
+    deps = [":TmuxSnapshotFixturesLib"],
+)

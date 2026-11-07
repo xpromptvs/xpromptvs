@@ -1,0 +1,764 @@
+# rdev: widen five private members of SwiftTerm.Terminal to internal so the read-only accessors in
+# third_party/swiftterm/rdev_snapshot_access.swift (compiled into this module) can read them.
+#
+# SIX BEHAVIOUR FIXES, for fidelity with xterm.js 6 (the terminal serializer replays SwiftTerm's
+# screen into xterm.js, so a state the two disagree on is a visible diff; the differential check is
+# web/test/term-snapshot-fidelity.test.ts). Each is tested in Tests/SwiftTermAccessorTests.swift.
+#
+# 1. Column-operation gaps. DECIC (CSI ' }), DECDC (CSI ' ~) and DECBI/DECFI (ESC 6 / ESC 9) filled
+#    their gap with `buffer.getNullCell()` — a written SPACE (scalar 32), and for DECIC/DECBI without
+#    the erase background. xterm.js fills with its null cell (code 0, ERASED) carrying the erase
+#    attribute, as SwiftTerm's own ICH/DCH already do. The four fills become
+#    `CharData(attribute: eraseAttr())` (testColumnInsertAndDelete…).
+# 2. Tab stops on a width change. SwiftTerm builds its buffers at 80 columns and then RESIZES them to
+#    the requested width, and Buffer.resize appended columns with NO stops, so a 100-column terminal
+#    had none past 72; a real resize also trimmed the stops past a narrower width and restarted the
+#    defaults from the OLD width. xterm.js keeps stops in a map a shrink never trims and, after every
+#    resize, restarts the defaults from the last stop below the NEW width (BufferSet.resize →
+#    setupTabStops(newCols)); a new terminal and RIS give both buffers fresh defaults at the current
+#    width. `setup()` now ends its resize with `setupTabStops()`, Buffer.resize only pads, and
+#    Terminal.resize calls the new Buffer.rdevResizeTabStops in place of `setupTabStops(index: oldCols)`,
+#    whose `oldCols` goes with it (testAWideTerminal…, testResizeSets…).
+# 3. The alternate screen's fill. ?47h, ?1047h and ?1049h called `activateAltBuffer(fillAttr: nil)`;
+#    xterm.js passes its erase attribute, so a fresh alt screen carries the pen's background. The
+#    call passes `eraseAttr()` (testEnteringTheAltScreen…).
+# 4. Leaving the alternate screen. xterm.js's ?47l, ?1047l and ?1049l ALL clear the alt buffer
+#    (BufferSet.activateNormalBuffer), the clear restores its default tab stops (Buffer.clear →
+#    setupTabStops), RIS gives a fresh alt buffer, and no alt-screen switch touches cursor
+#    visibility. SwiftTerm kept ?47's contents (so the next ?47h showed them), kept the alt buffer's
+#    stops, kept the alt buffer through RIS, and SHOWED the cursor on every switch (a TUI that hides
+#    it before ?1049h got it back). The leave passes `clearAlt: true` and re-sets the alt stops, RIS
+#    passes `clearAlt: true`, and the two `showCursor ()` calls go (testLeavingTheAltScreen…,
+#    testAltScreenSwitchesLeaveCursorVisibilityAlone).
+# 5. A recycled scrollback line. Once scrollback is full, Terminal.scroll RECYCLES the oldest line as
+#    the new bottom line (CircularList.recycle), which erased its cells with the erase attribute but
+#    KEPT its isWrapped and renderMode: every line that was a continuation when it was evicted planted
+#    a stale wrap flag on a fresh bottom line, and a snapshot joined two unrelated lines with a run of
+#    spaces (and SwiftTerm's own reflow joined them on a resize). xterm.js copies its blank line into
+#    the recycled one (BufferService.scroll → recycle().copyFrom(newLine): cells, length, isWrapped).
+#    The recycled line takes newLine's isWrapped and renderMode .single, or is replaced by a copy of
+#    newLine if its length differs (testARecycledScrollbackLineIsAFreshUnwrappedLine; corpus case
+#    recycled-wrapped-line).
+# 6. Grapheme widths, as the client's xterm.js (the graphemes addon under rdev's provider,
+#    web/src/client/term-unicode.ts) and tmux 3.7c count them — MEASURED 2026-09-27, docs/terminal.md
+#    "Glyph widths". A lone regional indicator is ONE column (SwiftTerm: two) and the second of a
+#    pair widens the cell to two; VS16 widens ANY base (SwiftTerm: only bases on its own list, and it
+#    DROPPED the selector from any other); a skin-tone modifier widens its base (SwiftTerm kept ☝🏽
+#    one column); VS15 narrows nothing (SwiftTerm narrowed ⌚︎ to one). A widening in the last column
+#    moves the glyph to the next row and erases the cell it left with the pen, as xterm.js's print
+#    does; under ?7l the joiner is dropped, as xterm.js drops it. And nothing joins a glyph across a
+#    control or an escape sequence: xterm.js zeroes its join state on every EXECUTE, CSI, ESC, OSC and
+#    DCS, where SwiftTerm joined to the last cell it wrote whatever came between; a joiner that joins
+#    nothing stands alone, one column (two for a skin-tone modifier), where SwiftTerm dropped it.
+#    Utilities.columnWidth loses its regional-indicator arm, the combining path in Terminal.handlePrint
+#    is rewritten around a new `rdevJoinable` (cleared by printStateReset and dispatchExecute)
+#    (testRegionalIndicators…, testVS16Widens…, testASkinToneModifier…, testAWideningAtTheMargin…,
+#    testNothingJoinsAcrossAControlOrASequence).
+#
+# And FIVE HOST-SAFETY FIXES (7-11), not about fidelity — the host links SwiftTerm IN-PROCESS, so a
+# crash or a hang here is one in the app, reachable by any program printing to a `pty:` tab:
+# 7. A DECRQSS (`DCS $ q … ST`) whose data is not ASCII CRASHED the process: the handler logged
+#    `newData!`, the data decoded with `.ascii`, which is nil for any byte >= 0x80 — and the host
+#    links SwiftTerm in-process, so one `printf '\eP$q\xc3\xa9\e\\'` in a `pty:` tab killed the app.
+#    SwiftTerm parses BYTES, so a DECRQSS ended by the C1 ST U+009C (bytes C2 9C) put the C2 in the
+#    data and crashed it too (found MEASURING 8-bit C1, 2026-09-27, docs/terminal.md). The log line
+#    reads `newData ?? "(not ASCII)"`; the switch already answers nil as invalid, `DCS 0 $ r ST`, which
+#    is xterm.js's answer (testADECRQSSWithNonASCIIDataIsAnsweredNotACrash).
+# 8. SIXEL is never decoded. `dispatchDcs` no longer returns a SixelDcsHandler for `DCS q`, so the DCS is
+#    consumed and ignored — which is what the client's xterm.js does (it loads no image addon). The
+#    handler wrote past its pixel buffer when an image's last run had no `$`/`-` (`\eP q#0~~\e\\`
+#    CRASHED the process), trapped on an overflowing colour number (`#99999999999999999999`) and
+#    allocated 24·n bytes for `!n` (review of 2026-09-27; testASixelImageIsIgnoredNotDecoded).
+# 9. KITTY GRAPHICS (APC `G`) is never decoded, and no APC body is kept. A truncated zlib payload
+#    (`\e_Ga=T,f=32,s=1,v=1,o=z;AAAA\e\\`) looped FOREVER in decompressZlib — on the host, holding the
+#    tab's serial lock and TerminalManager.lock, freezing every tab and all input — and a zlib bomb
+#    inflated without limit. SwiftTerm also ANSWERED kitty graphics queries xterm.js does not
+#    (testKittyGraphicsIsIgnoredNotDecoded).
+# 10. An OSC or DECRQSS body is CAPPED at xterm.js 6's PAYLOAD_LIMIT (10 000 000; it counts UTF-16 units,
+#    this counts bytes, so a non-ASCII body is cut a little sooner). Past it the sequence is consumed but
+#    DROPPED — not dispatched, not answered — as xterm.js drops it, and nothing more of it is kept: an
+#    unterminated OSC grew the host's memory without bound (testAnOSCOrDCSBodyPastThePayloadLimitIsDropped).
+# 11. CSI parameters and intermediates are CAPPED, as xterm.js 6 caps them (Params keeps 32 parameters
+#    and 32 sub-parameters — 64 here, where SwiftTerm flattens both — and its collect is one 32-bit
+#    number; 4 intermediates here). Past the cap further separators and digits are ignored and the
+#    sequence still dispatches on its final. An UNTERMINATED CSI (`ESC [` then an endless run of `;`)
+#    appended an Int per separator forever: 50 MB of `;` held 923 MB (measured, final review of
+#    2026-09-27; testAnEndlessCSIDoesNotGrowMemory).
+# And ONE RESIZE FIX (12) that DEPARTS from xterm.js on purpose:
+# 12. A program's interface BELOW THE CURSOR survives a shrink. Buffer.resize (xterm.js's, line for line)
+#    popped every line below the cursor — "a blank line below the cursor", it assumed — before scrolling
+#    anything into history. An agent keeps its cursor in its input box with its own rule, footer and
+#    update line UNDER it (Claude Code: the cursor 4 rows from the bottom, measured 2026-10-06), and on
+#    SIGWINCH repaints by going back down to where its output ended — clamped at the last row once those
+#    rows were popped — and erasing its own line count upward, which then erased that many CONVERSATION
+#    lines (docs/terminal.md, "A program's interface below the cursor"). tmux does the same (its
+#    `eat_empty`). Now, with ANY character below the cursor, the top scrolls into history and every row
+#    below the cursor stays — a trailing blank row too, which the agent drew as well — down to the cursor
+#    reaching the top row, past which the bottom is popped as before; with nothing below it, the blank
+#    rows go as upstream (a fresh shell's prompt does not move). The client's held picture predicts the
+#    same (web/src/client/hold-shift.ts, `drawnBelow`) (testAProgramsInterfaceBelowTheCursorSurvivesAShrink…).
+# And `Unknown SGR attribute` and `TODO: Enable Locator Reporting (DECELR)` are logged through `log`,
+# which honours `silentLog`, instead of `print` (they scribbled on the harness's stdout, which is a UI;
+# the fuzz run printed the second 173 times).
+#
+# Nothing else changes. To regenerate: apply this patch to a pristine SwiftTerm v1.13.0 into b/,
+# keep the pristine files in a/, edit b/, then append
+#   (diff -ru a b)
+# below this header — the header is every leading `#` line, so cut it by that, never by searching for
+# "diff -ru" (the instruction above contains it; a regeneration that did lost these lines). MEASURED:
+# two plain `diff -u` outputs concatenated are REFUSED by Bazel's patch parser (it applied
+# Terminal.swift's last hunk to Buffer.swift); `diff -ru`'s form is accepted.
+diff -ru a/Sources/SwiftTerm/Buffer.swift b/Sources/SwiftTerm/Buffer.swift
+--- a/Sources/SwiftTerm/Buffer.swift	2026-03-27 13:43:23
++++ b/Sources/SwiftTerm/Buffer.swift	2026-10-06 04:12:56
+@@ -405,6 +405,17 @@
+         return hasScrollback
+     }
+     
++    /// rdev: whether any line below the cursor holds a character (fix 12).
++    func rdevDrawnBelowCursor () -> Bool
++    {
++        var i = yBase + y + 1
++        while i < lines.count {
++            if lines [i].getTrimmedLength () > 0 { return true }
++            i += 1
++        }
++        return false
++    }
++
+     public func resize (newCols : Int, newRows : Int)
+     {
+         if marginRight > newCols - 1 {
+@@ -449,15 +460,23 @@
+                     }
+                 }
+             } else { // (this._rows >= newRows)
++                // rdev: a PROGRAM'S INTERFACE BELOW THE CURSOR IS KEPT. Upstream popped every line below the
++                // cursor, assuming each blank; an agent keeps its cursor in its input box with its own rule
++                // and footer under it, and repaints by going back down to where they were — popped, its
++                // repaint erased conversation lines above instead. With anything drawn below the cursor the
++                // top scrolls into history and those rows stay; only when all of it is blank do they go.
++                let drawnBelow = rdevDrawnBelowCursor ()
+                 for _ in (newRows..<rows).reversed () {
+                     if lines.count > newRows + yBase {
+-                        if lines.count > yBase + self.y + 1 {
+-                            // The line is a blank line below the cursor, remove it
++                        let below = lines.count > yBase + self.y + 1
++                        if below && !(drawnBelow && self.y > 0) {
++                            // A blank line below the cursor (or, the cursor on the top row, the last resort)
+                             lines.pop ()
+                         } else {
+-                            // The line is the cursor, scroll down
++                            // The top line scrolls into history; the cursor stays on its line
+                             yBase += 1
+                             yDisp += 1
++                            if below { self.y -= 1 }
+                         }
+                     }
+                 }
+@@ -490,13 +509,10 @@
+             scrollTop = 0
+         }
+         scrollBottom = newRows - 1
+-        if tabStops.count > newCols {
+-            tabStops.removeSubrange (newCols..<tabStops.count-1)
+-        } else {
+-            let n = newCols - tabStops.count
+-            for _ in 0..<n {
+-                tabStops.append (false)
+-            }
++        // rdev: a shrink never trims the stops (xterm.js keeps them in a map); Terminal.resize then
++        // restarts the defaults with rdevResizeTabStops.
++        if tabStops.count < newCols {
++            tabStops.append (contentsOf: Array (repeating: false, count: newCols - tabStops.count))
+         }
+         
+         if isReflowEnabled {
+@@ -580,6 +596,24 @@
+         }
+     }
+     
++    /// rdev: xterm.js 6's BufferSet.resize → setupTabStops(newCols): from `cols` itself when it is a
++    /// stop, otherwise from the last stop below it (0 when there is none), set a stop every
++    /// `tabStopWidth` up to the width. Stops at or past the width are kept, as xterm.js keeps them.
++    func rdevResizeTabStops (tabStopWidth: Int)
++    {
++        if tabStops.count < cols {
++            tabStops.append (contentsOf: Array (repeating: false, count: cols - tabStops.count))
++        }
++        var from = cols
++        if !(from < tabStops.count && tabStops [from]) {
++            repeat { from -= 1 } while from > 0 && !tabStops [from]
++            from = max (0, min (from, cols - 1))
++        }
++        for i in stride (from: from, to: cols, by: tabStopWidth) {
++            tabStops [i] = true
++        }
++    }
++
+     func tabSet (pos : Int)
+     {
+         if pos < tabStops.count {
+diff -ru a/Sources/SwiftTerm/EscapeSequenceParser.swift b/Sources/SwiftTerm/EscapeSequenceParser.swift
+--- a/Sources/SwiftTerm/EscapeSequenceParser.swift	2026-03-27 13:43:23
++++ b/Sources/SwiftTerm/EscapeSequenceParser.swift	2026-10-06 04:12:44
+@@ -334,8 +334,19 @@
+     
+     // buffers over several calls
+     var _osc: cstring
++    // rdev: an OSC body past `payloadLimit` is discarded — the sequence is consumed but never
++    // dispatched, as xterm.js 6 drops a payload past its PAYLOAD_LIMIT (fix 10).
++    var _oscOverflow = false
++    static let payloadLimit = 10_000_000
+     var _apc: cstring
+     var _pars: [Int]
++    // rdev (fix 11): parameters and intermediates are CAPPED, as xterm.js 6 caps them (Params: 32
++    // parameters and 32 sub-parameters; its collect is one 32-bit number). Past the cap further
++    // separators and digits are ignored and the sequence still dispatches on its final — so an endless
++    // `ESC [ ;;;;…` no longer grows the host's memory without bound.
++    var _parsRejected = false
++    static let maxParams = 64                      // 32 parameters + 32 sub-parameters, flattened here
++    static let maxCollect = 4
+     var _parsTxt: [UInt8]
+     var _collect: cstring
+     var printHandler: PrintHandler = { (slice : ArraySlice<UInt8>) -> () in }
+@@ -358,6 +369,7 @@
+ 
+     func dispatchExecute(code: UInt8) {
+         guard let terminal = terminal else { return }
++        terminal.rdevJoinable = false       // rdev: a control ends what the next glyph may join
+         switch code {
+         case 7:    terminal.tdel?.bell(source: terminal)
+         case 8:    terminal.cmdBackspace()
+@@ -551,7 +563,8 @@
+         }
+ 
+         switch command {
+-        case 0x47: terminal.handleKittyGraphics(content)  // G
++        // rdev: kitty graphics (APC G) is never decoded — the client's xterm.js loads no image addon,
++        // and a truncated zlib payload looped forever in decompressZlib (fix 9).
+         default:
+             apcHandlerFallback(command, content)
+         }
+@@ -563,9 +576,10 @@
+         // Match on collect + code
+         if collect == [0x24] && code == 0x71 {  // "$q"
+             return Terminal.DECRQSS(terminal: terminal)
+-        } else if collect.isEmpty && code == 0x71 {  // "q"
+-            return SixelDcsHandler(terminal: terminal)
+         }
++        // rdev: sixel (DCS q) is never decoded — the client's xterm.js loads no image addon, and
++        // SixelDcsHandler wrote past its pixel buffer, trapped on an overflowing number and allocated
++        // 24·n bytes for `!n` (fix 8). With no handler the DCS is consumed and ignored.
+         return nil
+     }
+ 
+@@ -592,8 +606,10 @@
+     {
+         currentState = initialState
+         _osc = []
++        _oscOverflow = false
+         _apc = []
+         _pars = [0]
++        _parsRejected = false
+         _collect = []
+         activeDcsHandler = nil
+         printStateReset()
+@@ -634,9 +650,11 @@
+         var print = -1
+         var dcs = -1
+         var osc = self._osc
++        var oscOverflow = self._oscOverflow
+         var apc = self._apc
+         var collect = self._collect
+         var pars = self._pars
++        var parsRejected = self._parsRejected
+         var parsTxt = self._parsTxt
+         let tableData = table.table
+         var dcsHandler = activeDcsHandler
+@@ -666,6 +684,7 @@
+             
+             // shortcut for CSI params
+             if currentState == .csiParam && (code > 0x2f && code < 0x3a) {
++                if parsRejected { i += 1; continue }
+                 let newV = pars [pars.count - 1] * 10 + Int(code) - 48
+                 
+                 // Prevent attempts at overflowing - crash 
+@@ -739,9 +758,15 @@
+                 _parsTxt = parsTxt
+                 dispatchCsi(code: code, pars: pars, collect: collect)
+             case .param:
+-                if code == 0x3b || code == 0x3a {
+-                    parsTxt.append(code)
+-                    pars.append (0)
++                if parsRejected {
++                    break
++                } else if code == 0x3b || code == 0x3a {
++                    if pars.count >= EscapeSequenceParser.maxParams {
++                        parsRejected = true
++                    } else {
++                        parsTxt.append(code)
++                        pars.append (0)
++                    }
+                 } else {
+                     let newV = pars [pars.count - 1] * 10 + Int(code) - 48
+ 
+@@ -752,15 +777,19 @@
+             case .escDispatch:
+                 dispatchEsc(collect: collect, code: code)
+             case .collect:
+-                collect.append (code)
++                if collect.count < EscapeSequenceParser.maxCollect {
++                    collect.append (code)
++                }
+             case .clear:
+                 if ~print != 0 {
+                     printHandler (data [print..<i])
+                     print = -1
+                 }
+                 osc = []
++                oscOverflow = false
+                 apc = []
+                 pars = [0]
++                parsRejected = false
+                 parsTxt = []
+                 collect = []
+                 dcs = -1
+@@ -784,8 +813,10 @@
+                     transition |= ParserState.escape.rawValue
+                 }
+                 osc = []
++                oscOverflow = false
+                 apc = []
+                 pars = [0]
++                parsRejected = false
+                 parsTxt = []
+                 collect = []
+                 dcs = -1
+@@ -800,6 +831,7 @@
+                     apc = []
+                 } else {
+                     osc = []
++                    oscOverflow = false
+                 }
+             case .oscPut:
+                 var j = i
+@@ -809,9 +841,11 @@
+                         break
+                     } else if c >= 0x20 {
+                         if currentState == .apcString {
+-                            apc.append (c)
+-                        } else {
++                            // rdev: an APC is ignored (fix 9), so its body is not kept either.
++                            _ = c
++                        } else if !oscOverflow {
+                             osc.append (c)
++                            if osc.count > EscapeSequenceParser.payloadLimit { osc = []; oscOverflow = true }
+                         }
+                     }
+                     j += 1
+@@ -825,7 +859,7 @@
+                         dispatchApc(command: command, content: content)
+                     }
+                 } else {
+-                    if osc.count != 0 && code != ControlCodes.CAN && code != ControlCodes.SUB {
++                    if osc.count != 0 && !oscOverflow && code != ControlCodes.CAN && code != ControlCodes.SUB {
+                         var oscCode: Int
+                         var content: ArraySlice<UInt8>
+                         let semiColonAscii = 59 // ';'
+@@ -844,8 +878,10 @@
+                     transition |= ParserState.escape.rawValue
+                 }
+                 osc = []
++                oscOverflow = false
+                 apc = []
+                 pars = [0]
++                parsRejected = false
+                 parsTxt = []
+                 collect = []
+                 dcs = -1
+@@ -862,9 +898,11 @@
+         }
+         // save non pushable buffers
+         _osc = osc
++        _oscOverflow = oscOverflow
+         _apc = apc
+         _collect = collect
+         _pars = pars
++        _parsRejected = parsRejected
+         _parsTxt = parsTxt
+         
+         // save active dcs handler reference
+diff -ru a/Sources/SwiftTerm/Terminal.swift b/Sources/SwiftTerm/Terminal.swift
+--- a/Sources/SwiftTerm/Terminal.swift	2026-03-27 13:43:23
++++ b/Sources/SwiftTerm/Terminal.swift	2026-10-06 04:12:44
+@@ -326,7 +326,7 @@
+     public private(set) var buffer: Buffer
+ 
+     private let synchronizedOutputTimeoutSeconds: TimeInterval = 1.0
+-    private var synchronizedOutputActive: Bool = false
++    var synchronizedOutputActive: Bool = false
+     private var synchronizedOutputBuffer: Buffer?
+     private var synchronizedOutputBufferIsAlternate: Bool = false
+     private var synchronizedOutputTimeoutItem: DispatchWorkItem?
+@@ -400,12 +400,12 @@
+     /// the terminal, the content will be wrapped in "ESC [ 200 ~" to start, and "ESC [ 201 ~" to end.
+     public private(set) var bracketedPasteMode: Bool = false
+     
+-    private var charset: [UInt8:String]? = nil
+-    private var gCharsets: [[UInt8:String]?] = [CharSets.defaultCharset, nil, nil, nil]
++    var charset: [UInt8:String]? = nil
++    var gCharsets: [[UInt8:String]?] = [CharSets.defaultCharset, nil, nil, nil]
+     var gcharset: Int = 0
+     var reverseWraparound: Bool = false
+     weak var tdel: TerminalDelegate?
+-    private var curAttr: Attribute = CharData.defaultAttr
++    var curAttr: Attribute = CharData.defaultAttr
+     private var charToIndexMap: [Character:Int32] = [:]
+     private var indexToCharMap: [Int32: Character] = [:]
+     private var lastCharIndex: Int32 = Int32(CharData.maxRune + 1)
+@@ -490,7 +490,7 @@
+     }
+     
+     // The protocol encoding for the terminal
+-    private var mouseProtocol: MouseProtocolEncoding = .x10
++    var mouseProtocol: MouseProtocolEncoding = .x10
+ 
+     // This is used to track if we are setting the colors, to prevent a
+     // recursive invocation (nativeForegroundColor sets the terminal
+@@ -782,6 +782,8 @@
+         if clearAlt {
+             clearKittyImages(in: altBuffer, isAlternateBuffer: true)
+             altBuffer.clear ()
++            // rdev: xterm.js's Buffer.clear restores the default tab stops too
++            altBuffer.setupTabStops (tabStopWidth: tabStopWidth)
+         }
+         buffer = normalBuffer
+     }
+@@ -825,11 +827,14 @@
+         
+         if isReset {
+             resetNormalBuffer()
+-            activateNormalBuffer(clearAlt: false)
++            activateNormalBuffer(clearAlt: true)       // rdev: xterm.js's reset gives a fresh alt buffer
+         } else {
+             normalBuffer.resize(newCols: cols, newRows: rows)
+             altBuffer.resize(newCols: cols, newRows: rows)
+         }
++        // rdev: both buffers get a fresh terminal's stops at THIS width, as xterm.js's do at creation
++        // and on RIS; the buffers were built at 80 columns and resized, which added columns without any.
++        setupTabStops()
+         cursorHidden = false
+         
+         // modes
+@@ -972,17 +977,23 @@
+         func hook (collect: cstring, parameters: [Int],  flag: UInt8)
+         {
+             data = []
++            overflow = false
+         }
+         
+         func put (data : ArraySlice<UInt8>)
+         {
++            // rdev: a request past the payload limit is dropped unanswered, as xterm.js drops it (fix 10).
++            if overflow { return }
++            if self.data.count + data.count > EscapeSequenceParser.payloadLimit { self.data = []; overflow = true; return }
+             for x in data {
+                 self.data.append(x)
+             }
+         }
++        var overflow = false
+         
+         func unhook ()
+         {
++            if overflow { overflow = false; return }
+             let newData = String (bytes: data, encoding: .ascii)
+             var ok = 1 // 0 means the request is valid according to docs, but tests expect 0?
+             var result: String
+@@ -1005,7 +1016,7 @@
+             default:
+                 ok = 0 // this means the request is not valid, report that to the host.
+                 // invalid: DCS 0 $ r Pt ST (xterm)
+-                terminal.log ("Unknown DCS + \(newData!)")
++                terminal.log ("Unknown DCS + \(newData ?? "(not ASCII)")")
+                 // Do not report 'newData', because it can be exploited
+                 // see https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=510030
+                 result = ""
+@@ -1159,7 +1170,13 @@
+     func printStateReset ()
+     {
+         readingBuffer.reset ()
++        rdevJoinable = false
+     }
++
++    /// rdev: the last thing the parser did was PRINT a glyph, so the next one may join it. xterm.js
++    /// joins only then (EscapeSequenceParser resets its precedingJoinState on every control, escape
++    /// sequence and string); a joiner after anything else stands alone.
++    var rdevJoinable = false
+     
+     // TODO: was this unused
+     var lastBufferCol: Int = 0
+@@ -1177,6 +1194,7 @@
+             if allAscii {
+                 updateRange(borrowing: buffer, buffer.y)
+                 let consumed = buffer.insertAsciiRun(data, attribute: curAttr)
++                if consumed > 0 { rdevJoinable = true }
+                 if consumed == data.count {
+                     updateRange(borrowing: buffer, buffer.y)
+                     return
+@@ -1213,6 +1231,7 @@
+                         chWidth = 1
+                         let charData = makeCharData (attribute: curAttr, char: ch, size: Int8 (chWidth))
+                         buffer.insertCharacter(charData)
++                        rdevJoinable = true
+                         continue
+                     }
+                 }
+@@ -1222,6 +1241,7 @@
+ 		if chWidth > 0 {
+                 	let charData = makeCharData (attribute: curAttr, scalar: rune, size: Int8 (chWidth))
+                 	buffer.insertCharacter(charData)
++                	rdevJoinable = true
+ 		}
+                 continue
+             } else if readingBuffer.bytesLeft() >= (n-1) {
+@@ -1242,6 +1262,7 @@
+                     if chWidth > 0 {
+                     	let charData = makeCharData (attribute: curAttr, scalar: rune, size: Int8 (chWidth))
+                     	buffer.insertCharacter(charData)
++                    	rdevJoinable = true
+ 		    }
+                     continue
+                 }
+@@ -1267,6 +1288,7 @@
+             }
+ 
+             if chWidth < 0 {
++                rdevJoinable = false                // a C1 control: xterm.js executes it
+                 continue
+             }
+ 
+@@ -1284,8 +1306,12 @@
+                                        firstScalar.properties.isVariationSelector ||
+                                        firstScalar.value == 0x200D  // ZWJ
+ 
++                // rdev: nothing joins a glyph across a control or a sequence (xterm.js)
++                if !rdevJoinable {
++                    shouldTryCombine = false
++                }
+                 // Also check if the previous character ends with ZWJ - if so, we should combine
+-                if !shouldTryCombine {
++                else if !shouldTryCombine {
+                     let last = buffer.lastBufferStorage
+                     if last.cols == cols && last.rows == rows {
+                         let existingLine = buffer.lines [last.y]
+@@ -1320,38 +1346,39 @@
+                         if newStr.count == 1 {
+                             if let newCh = newStr.first {
+                                 let oldSize = cd.width
+-                                let isVs16 = firstScalar.value == 0xFE0F
+-                                let isVs15 = firstScalar.value == 0xFE0E
+-                                let needsEmojiVariationCheck = isVs16 || isVs15
+-                                if needsEmojiVariationCheck {
+-                                    let baseScalar = getCharacter(for: cd).unicodeScalars.last
+-                                    if baseScalar == nil || !UnicodeUtil.isEmojiVs16Base(rune: baseScalar!) {
+-                                        continue
+-                                    }
+-                                }
+-                                if isVs16 {
+-                                    if oldSize != 2 && lastx + 1 < cols {
++                                // rdev: VS16, a skin-tone modifier and the second regional indicator
++                                // of a pair WIDEN any base to two columns; everything else that joins
++                                // (VS15 included) keeps the base's width — as xterm.js (rdev's
++                                // graphemes provider) and tmux count it.
++                                let widens = firstScalar.value == 0xFE0F || firstScalar.properties.isEmojiModifier ||
++                                    UnicodeUtil.isRegionalIndicator(firstScalar)
++                                if widens && oldSize != 2 && (lastx + 1 < cols || last.y == buffer.y + buffer.yBase) {
++                                    if lastx + 1 < cols {
+                                         updateCharData(&cd, char: newCh, size: 2)
+                                         let nextX = lastx + 1
+                                         let empty = makeCharData (attribute: cd.attribute, code: 0, size: 0)
+                                         existingLine [nextX] = empty
+                                         buffer.x += 1
++                                    } else if !wraparound {
++                                        // xterm.js drops a joiner that cannot widen in place
++                                        continue
+                                     } else {
+-                                        updateCharData(&cd, char: newCh, size: Int32(oldSize))
++                                        // At the margin xterm.js MOVES the glyph to the next row
++                                        // (wrapping) and erases the cell it leaves with the pen.
++                                        updateCharData(&cd, char: newCh, size: 2)
++                                        existingLine [lastx] = CharData(attribute: curAttr)
++                                        updateRange(borrowing: buffer, last.y)
++                                        buffer.x = lastx
++                                        buffer.insertCharacter(cd)
++                                        rdevJoinable = true
++                                        continue
+                                     }
+-                                } else if isVs15 {
+-                                    updateCharData(&cd, char: newCh, size: 1)
+-                                    if oldSize == 2 && buffer.x > 0 {
+-                                        buffer.x -= 1
+-                                    }
+                                 } else {
+-                                    updateCharData(&cd, char: newCh, size: Int32 (cd.width))
+-                                    if cd.width != oldSize {
+-                                        buffer.x += 1
+-                                    }
++                                    updateCharData(&cd, char: newCh, size: Int32(oldSize))
+                                 }
+                                 existingLine [lastx] = cd
+                                 updateRange(borrowing: buffer, last.y)
++                                rdevJoinable = true
+                                 continue
+                             }
+                         }
+@@ -1359,7 +1386,14 @@
+                 }
+             }
+             if chWidth == 0 {
+-                continue
++                // rdev: a joiner that joins nothing — after a control or a sequence, or at the start —
++                // stands alone as xterm.js writes it: one column, two for a skin-tone modifier (which
++                // is an emoji in its own right). One that COULD have joined and did not (ZWSP after a
++                // letter) is dropped; xterm.js keeps it inside the previous cell, at no width.
++                if rdevJoinable {
++                    continue
++                }
++                chWidth = (ch.unicodeScalars.first?.properties.isEmojiModifier ?? false) ? 2 : 1
+             }
+             // The accessibility stack might not need this
+             //let screenReaderMode = options.screenReaderMode
+@@ -1368,6 +1402,7 @@
+             //}
+             let charData = makeCharData (attribute: curAttr, char: ch, size: Int8 (chWidth))
+             buffer.insertCharacter(charData)
++            rdevJoinable = true
+         }
+         updateRange(borrowing: buffer, buffer.y)
+         readingBuffer.done ()
+@@ -2717,7 +2752,7 @@
+             
+             for row in buffer.scrollTop...buffer.scrollBottom {
+                 let line = buffer.lines [row+buffer.yBase]
+-                line.insertCells(pos: buffer.x, n: n, rightMargin: marginMode ? buffer.marginRight : cols-1, fillData: buffer.getNullCell())
++                line.insertCells(pos: buffer.x, n: n, rightMargin: marginMode ? buffer.marginRight : cols-1, fillData: CharData(attribute: eraseAttr()))
+                 line.isWrapped = false
+             }
+             return
+@@ -2778,7 +2813,7 @@
+             //   Pu = 0  or omitted ⇒  default to character cells.
+             //   Pu = 1  ⇐  device physical pixels.
+             //   Pu = 2  ⇐  character cells.
+-            print ("TODO: Enable Locator Reporting (DECELR)")
++            log ("TODO: Enable Locator Reporting (DECELR)")
+         default:
+             break
+         }
+@@ -3912,7 +3947,7 @@
+                 underlineColor = nil
+                 
+             default:
+-                print ("Unknown SGR attribute: \(p) \(pars)")
++                log ("Unknown SGR attribute: \(p) \(pars)")
+             }
+             i += 1
+         }
+@@ -4113,13 +4148,13 @@
+                 fallthrough
+             case 1047: // normal screen buffer - clearing it first
+                    // Ensure the selection manager has the correct buffer
+-                activateNormalBuffer(clearAlt: par == 1047 || par == 1049)
++                // rdev: every leave clears the alt buffer, and no switch touches cursor visibility, as in xterm.js
++                activateNormalBuffer(clearAlt: true)
+                 if (par == 1049){
+                     cmdRestoreCursor ([], [])
+                 }
+                 refresh (startRow: 0, endRow: rows - 1)
+                 syncScrollArea ()
+-                showCursor ()
+                 tdel?.bufferActivated(source: self)
+                 
+             case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)
+@@ -4352,10 +4387,9 @@
+             case 47: // alt screen buffer
+                 fallthrough
+             case 1047: // alt screen buffer
+-                activateAltBuffer (fillAttr: nil)
++                activateAltBuffer (fillAttr: eraseAttr())
+                 refresh (startRow: 0, endRow: rows - 1)
+                 syncScrollArea ()
+-                showCursor ()
+                 tdel?.bufferActivated(source: self)
+                 
+             case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)
+@@ -4807,7 +4841,7 @@
+         
+         for y in buffer.scrollTop...buffer.scrollBottom {
+             let line = buffer.lines [buffer.yBase + y]
+-            line.deleteCells(pos: buffer.x, n: p, rightMargin: marginMode ? buffer.marginRight : cols-1, fillData: buffer.getNullCell(attribute: eraseAttr()))
++            line.deleteCells(pos: buffer.x, n: p, rightMargin: marginMode ? buffer.marginRight : cols-1, fillData: CharData(attribute: eraseAttr()))
+             line.isWrapped = false
+         }
+         updateRange (startLine: buffer.scrollTop, endLine: buffer.scrollBottom)
+@@ -5137,9 +5171,9 @@
+         for y in buffer.scrollTop...buffer.scrollBottom {
+             let line = buffer.lines [buffer.yBase + y]
+             if back {
+-                line.insertCells(pos: at, n: 1, rightMargin: marginMode ? buffer.marginRight : cols-1, fillData: buffer.getNullCell())
++                line.insertCells(pos: at, n: 1, rightMargin: marginMode ? buffer.marginRight : cols-1, fillData: CharData(attribute: eraseAttr()))
+             } else {
+-                line.deleteCells(pos: at, n: 1, rightMargin: marginMode ? buffer.marginRight : cols-1, fillData: buffer.getNullCell(attribute: eraseAttr()))
++                line.deleteCells(pos: at, n: 1, rightMargin: marginMode ? buffer.marginRight : cols-1, fillData: CharData(attribute: eraseAttr()))
+             }
+             //line.isWrapped = false
+         }
+@@ -5239,6 +5273,16 @@
+             if bottomRow == lines.count - 1 {
+                 if willBufferBeTrimmed {
+                     lines.recycle (clearAttribute: eraseAttr())
++                    // rdev: the recycled line becomes newLine, as xterm.js's recycle().copyFrom(newLine)
++                    // does. recycle erased its cells but KEPT the evicted line's isWrapped and
++                    // renderMode, planting a stale wrap flag on a fresh bottom line.
++                    let recycled = lines [bottomRow]
++                    if recycled.count != newLine.count {
++                        lines [bottomRow] = BufferLine (from: newLine)
++                    } else {
++                        recycled.isWrapped = newLine.isWrapped
++                        recycled.renderMode = .single
++                    }
+                 } else {
+                     lines.push (BufferLine (from: newLine))
+                 }
+@@ -5410,14 +5454,13 @@
+             return
+         }
+         endSynchronizedOutput ()
+-        let oldCols = self.cols
+         resizeBuffers(newColumns: newCols, newRows: newRows)
+         self.cols = newCols
+         self.rows = newRows
+         options.cols = newCols
+         options.rows = newRows
+-        normalBuffer.setupTabStops (index: oldCols, tabStopWidth: tabStopWidth)
+-        altBuffer.setupTabStops (index: oldCols, tabStopWidth: tabStopWidth)
++        normalBuffer.rdevResizeTabStops (tabStopWidth: tabStopWidth)
++        altBuffer.rdevResizeTabStops (tabStopWidth: tabStopWidth)
+         refresh (startRow: 0, endRow: self.rows - 1)
+     }
+     
+diff -ru a/Sources/SwiftTerm/Utilities.swift b/Sources/SwiftTerm/Utilities.swift
+--- a/Sources/SwiftTerm/Utilities.swift	2026-03-27 13:43:23
++++ b/Sources/SwiftTerm/Utilities.swift	2026-10-06 04:12:44
+@@ -367,9 +367,8 @@
+             return 0
+         }
+ 
+-        if isRegionalIndicator(rune) {
+-            return 2
+-        }
++        // rdev: a LONE regional indicator is one column (xterm.js, tmux); a pair becomes one wide
++        // cell when the second joins it (Terminal.swift, the combining path).
+ 
+         if isEastAsianWide(irune) {
+             return 2

@@ -1,0 +1,4 @@
+/* 256px color period; tile edges repeat in phase. Motion is 15deg above horizontal. */
+.loading-indicator{width:64px;height:48px;justify-self:center;mask-position:center;mask-size:contain;mask-repeat:no-repeat;-webkit-mask-position:center;-webkit-mask-size:contain;-webkit-mask-repeat:no-repeat;background:repeating-linear-gradient(75deg,#00bfff 0px,#b54cff 85.333333px,#ff00b8 170.666667px,#00bfff 256px);background-size:265.030702px 989.108046px;background-repeat:repeat;animation:loading-chevron-flow 823.045268ms linear infinite}
+@keyframes loading-chevron-flow{from{background-position:0px 0px}to{background-position:247.277012px -66.257676px}}
+@media(prefers-reduced-motion:reduce){.loading-indicator{animation:none;background-position:50% 50%}}

@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "rdev/control",
+  "title": "rdev control message",
+  "type": "object",
+  "required": ["t"],
+  "definitions": {
+    "rgb": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "t": { "const": "term-stream-error" },
+        "reason": { "enum": ["overloaded", "codec"] },
+        "epoch": { "type": "string", "pattern": "^[1-9][0-9]{0,19}$" }
+      },
+      "required": ["t", "reason", "epoch"],
+      "additionalProperties": false
+    },
+    {
+      "properties": {
+        "t": { "const": "resize" },
+        "cols": { "type": "integer", "minimum": 1, "maximum": 1000 },
+        "rows": { "type": "integer", "minimum": 1, "maximum": 1000 }
+      },
+      "required": ["t", "cols", "rows"],
+      "additionalProperties": false
+    },
+    { "properties": { "t": { "const": "ping" }, "ts": { "type": "integer", "minimum": 0 } }, "required": ["t", "ts"], "additionalProperties": false },
+    { "properties": { "t": { "const": "pong" }, "ts": { "type": "integer", "minimum": 0 } }, "required": ["t", "ts"], "additionalProperties": false },
+    {
+      "properties": {
+        "t": { "const": "term-palette" },
+        "fg": { "$ref": "#/definitions/rgb" },
+        "bg": { "$ref": "#/definitions/rgb" },
+        "cursor": { "$ref": "#/definitions/rgb" },
+        "ansi": { "type": "array", "items": { "$ref": "#/definitions/rgb" }, "minItems": 16, "maxItems": 16 }
+      },
+      "required": ["t", "fg", "bg", "cursor", "ansi"],
+      "additionalProperties": false
+    }
+  ]
+}

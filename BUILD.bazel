@@ -1,0 +1,14 @@
+# Root package. The Go prefix is declared in //host/streaming-engine/PionBridge, whose module path
+# (llv.local/pionbridge) does not match its directory. It used to say //host/pion-bridge — rdev's own
+# Go module, deleted when its pion_* C ABI was re-pointed at LLV's Session — which was the one LIVE
+# cross-reference to that package left in the tree rather than a deliberate historical note.
+
+load("@gazelle//:def.bzl", "gazelle")
+
+gazelle(name = "gazelle")
+
+# go.work lists both Go modules (rdev/pionbridge and the imported engine's
+# llv.local/pionbridge) so MODULE.bazel's go_deps extension can combine them — it
+# accepts only one "go_deps.from_file" tag per Bazel module, and go.work is the
+# documented way to register more than one go.mod under a single tag.
+exports_files(["go.work"])

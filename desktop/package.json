@@ -1,0 +1,26 @@
+{
+  "name": "@rdev/desktop",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Xpromptvs's dashboard renderer \u2014 bundled into the native app (app/)",
+  "scripts": {
+    "typecheck:renderer": "tsc -p tsconfig.renderer.json",
+    "build:renderer": "esbuild src/renderer/main.ts src/renderer/e2e-row.ts src/renderer/permissions.ts src/renderer/publish-status.ts src/renderer/share-notice.ts --bundle --splitting --format=esm --target=es2022 --log-level=warning --outdir=dist/renderer",
+    "build:assets": "mkdir -p dist/renderer && cp src/renderer/index.html src/renderer/style.css dist/renderer/ && cp -R ../web/public/shellstorm dist/renderer/",
+    "build": "rm -rf dist && npm run typecheck:renderer && npm run build:renderer && npm run build:assets && npm run build:agents && node ../scripts/stamp-release.mjs write dist/renderer",
+    "build:web": "npm --prefix ../web run build",
+    "build:native": "sh ../scripts/assemble-app.sh",
+    "build:all": "npm run build:web && npm run build && npm run build:native",
+    "build:check": "npm run build:web && npm run build && RDEV_APP_OUT=\"${RDEV_APP_OUT:-$PWD/release-check}\" sh ../scripts/assemble-app.sh",
+    "start": "npm run dev",
+    "dev": "npm run build:check && open \"${RDEV_APP_OUT:-$PWD/release-check}/Xpromptvs Development.app\"",
+    "package": "npm run build:web && npm run build && sh ../scripts/assemble-app.sh release",
+    "test": "npm run build && node --test test/*.test.js",
+    "build:agents": "node ../scripts/build-agent-helper.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "typescript": "^5.5.0"
+  },
+  "dependencies": {}
+}

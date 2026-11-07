@@ -1,0 +1,104 @@
+load("@rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+
+# gazelle discovers this package's own go.mod (see //go.work, which lists this directory
+# as a separate module) and already derives the correct importpath from it — this
+# directive is kept anyway, matching //host/pion-bridge's, as documentation of WHY: the
+# module path (llv.local/pionbridge, see go.mod) does not match the directory
+# (host/streaming-engine/PionBridge), and gazelle:prefix is what would be needed to fix
+# that if the nested-go.mod discovery ever stopped applying.
+# gazelle:prefix llv.local/pionbridge
+
+exports_files([
+    "go.mod",
+    # rdev's hand-written C ABI header, moved here from host/pion-bridge/ with the ABI itself
+    # (rdev_abi.go). Swift imports it as CPionBridge; //host/RdevHostKit:CPionBridge consumes it
+    # from here directly, which is why there is no copy checked in anywhere else.
+    "pion_bridge.h",
+])
+
+# LLVShellTests (Tests/Shell/RunWANRecoveryOptimizationTests.sh) reads several of these
+# fixtures directly by repo-relative path. testdata/ is a subdirectory of THIS package
+# (no nested BUILD.bazel), so a glob from a different package cannot reach it -- the
+# filegroup has to live here.
+filegroup(
+    name = "testdata",
+    srcs = glob(["testdata/**"]),
+    visibility = ["//visibility:public"],
+)
+
+# GAZELLE REGENERATION TRAP: `bazelisk run //:gazelle -- update` over this package emits
+# a SECOND test target named `pionbridge_test` (derived from the directory) alongside the
+# hand-named `llvpionbridge_test` below, rather than updating it — gazelle merges, it does
+# not rename. Delete the duplicate it adds; do not keep both. The sibling
+# //host/pion-bridge/BUILD.bazel documents its own analogous gazelle drift.
+
+# `package main` with cgo: callback_trampolines.c/.h are compiled into the library, and
+# the six //go:embed directives (in flexfec_controller_policy.go, flexfec_profile.go,
+# recovery_profile.go) require embedsrcs — without it the build fails at compile time
+# with "pattern testdata/...: no matching files found".
+go_library(
+    name = "llvpionbridge_lib",
+    srcs = glob(
+        ["*.go", "*.c", "*.h"],
+        exclude = ["*_test.go"],
+    ),
+    cgo = True,
+    embedsrcs = [
+        "testdata/flexfec_controller_policy.json",
+        "testdata/flexfec_impairment_profiles.json",
+        "testdata/flexfec_retained_tiers.json",
+        "testdata/recovery_impairment_profiles.json",
+        "testdata/wan_recovery_profiles.json",
+        "testdata/wan_rtx_age_candidates.json",
+    ],
+    importpath = "llv.local/pionbridge",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_pion_ice_v4//:ice",
+        "@com_github_pion_interceptor//:interceptor",
+        "@com_github_pion_interceptor//pkg/flexfec",
+        "@com_github_pion_interceptor//pkg/nack",
+        "@com_github_pion_interceptor//pkg/report",
+        "@com_github_pion_rtcp//:rtcp",
+        "@com_github_pion_rtp//:rtp",
+        "@com_github_pion_rtp//codecs",
+        "@com_github_pion_transport_v4//:transport",
+        "@com_github_pion_transport_v4//packetio",
+        "@com_github_pion_webrtc_v4//:webrtc",
+    ],
+)
+
+# The c-archive Swift links, mirroring //host/pion-bridge:pionbridge. Output lands at
+# bazel-bin/host/streaming-engine/PionBridge/llvpionbridge_/llvpionbridge.a — note the
+# trailing-underscore directory rules_go inserts.
+#
+# LOAD-BEARING: this archive and //host/pion-bridge:pionbridge must never enter the same
+# binary. Each embeds a complete Go runtime. (Historical: libRdevHost.dylib linked rdev's and
+# LLVWebRTCTests this one; sub-project C unified them, rdev's is deleted, and the product —
+# //app:Xpromptvs — links exactly this one, which gate-engine-product-edge.sh asserts.)
+go_binary(
+    name = "llvpionbridge",
+    embed = [":llvpionbridge_lib"],
+    linkmode = "c-archive",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "llvpionbridge_test",
+    srcs = glob(["*_test.go"]),
+    data = glob(["testdata/**"]) + ["//protocol:fixtures"],
+    embed = [":llvpionbridge_lib"],
+    deps = [
+        "@com_github_pion_interceptor//:interceptor",
+        "@com_github_pion_interceptor//pkg/flexfec",
+        "@com_github_pion_logging//:logging",
+        "@com_github_pion_rtcp//:rtcp",
+        "@com_github_pion_rtp//:rtp",
+        "@com_github_pion_rtp//codecs",
+        "@com_github_pion_sctp//:sctp",
+        "@com_github_pion_transport_v4//:transport",
+        "@com_github_pion_transport_v4//packetio",
+        "@com_github_pion_transport_v4//vnet",
+        "@com_github_pion_webrtc_v4//:webrtc",
+    ],
+)

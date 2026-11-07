@@ -1,0 +1,12 @@
+{
+  "binarySHA256": "239f63fd1b6805b16e6726dc61072d6d109ceaf7b968ba90e838f614380f7927",
+  "evidenceKind": "flexfec-retained-static-tiers",
+  "schemaVersion": 1,
+  "sourceRevision": "76ea09b7b3ca0b15966103f087744f3749fdaf82",
+  "sourceRevisionSHA256": "11fa1ff0566609f4cc1559228c8068f1c12c14d9dcecf967ab19381b02f3ae49",
+  "tiers": [
+    "low",
+    "medium",
+    "high"
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "burstWindowMilliseconds": 50,
+  "controllerVersion": "ll100-d1000-h250-b2x4",
+  "downCleanMilliseconds": 1000,
+  "evaluationIntervalMilliseconds": 100,
+  "feedbackStaleMilliseconds": 750,
+  "highBurstPackets": 4,
+  "highLossBasisPoints": 300,
+  "lowLossBasisPoints": 100,
+  "mediumBurstPackets": 2,
+  "mediumLossBasisPoints": 100,
+  "minimumFinalizedPackets": 64,
+  "queueTrendMilliseconds": 3,
+  "reorderingGraceMilliseconds": 25,
+  "repairLossCapBasisPoints": 5000,
+  "repairLossMinimumPackets": 8,
+  "schemaVersion": 1,
+  "transitionHoldMilliseconds": 250,
+  "upHoldWindows": 2
+}

@@ -1,0 +1,12 @@
+{
+  "_doc": "How a pasted path is TYPED into a terminal, shared by the host (RdevCore `PasteTyping`) and the app's client (`paste-local.ts`, a folder pasted on This Mac): as-is when every character is in [A-Za-z0-9._/-], single-quoted otherwise, a quote inside closed and escaped; each path its own piece, followed by a space.",
+  "quoted": [
+    {"path": "/Users/isaac/Library/Caches/ai.xpromptvs.app/default/Pastes/x.png", "typed": "/Users/isaac/Library/Caches/ai.xpromptvs.app/default/Pastes/x.png"},
+    {"path": "/Users/o'neil x/a.png", "typed": "'/Users/o'\\''neil x/a.png'"},
+    {"path": "/Users/isaac/My Projects", "typed": "'/Users/isaac/My Projects'"},
+    {"path": "/Users/isaac/Résumés", "typed": "'/Users/isaac/Résumés'"},
+    {"path": "/tmp/a$b`c\"d!e*f", "typed": "'/tmp/a$b`c\"d!e*f'"},
+    {"path": "/tmp/plain_name-1.2/x", "typed": "/tmp/plain_name-1.2/x"}
+  ],
+  "pieces": {"paths": ["/a/x.png", "/a/My Folder"], "typed": ["/a/x.png ", "'/a/My Folder' "]}
+}

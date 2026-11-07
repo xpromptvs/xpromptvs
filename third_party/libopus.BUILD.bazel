@@ -1,0 +1,7 @@
+# libopus's source tree, handed to rules_foreign_cc's cmake() by //third_party:libopus.
+# The tree is never modified, exactly as @libaom_src's is not.
+filegroup(
+    name = "all_srcs",
+    srcs = glob(["**"], exclude = ["bazel-*/**"]),
+    visibility = ["//visibility:public"],
+)

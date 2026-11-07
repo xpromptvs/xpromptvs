@@ -1,0 +1,4 @@
+{
+  "development": {"graphicalAgents": true, "glasses": true},
+  "publication": {"graphicalAgents": false, "glasses": false}
+}

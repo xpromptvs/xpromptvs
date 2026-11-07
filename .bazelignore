@@ -1,0 +1,8 @@
+third_party/libaom
+node_modules
+e2e/node_modules
+web/node_modules
+protocol/node_modules
+third_party/libopus
+desktop/node_modules
+desktop/release

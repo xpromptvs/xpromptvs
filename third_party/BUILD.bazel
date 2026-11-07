@@ -1,0 +1,57 @@
+load("@rules_foreign_cc//foreign_cc:defs.bzl", "cmake")
+
+sh_test(
+    name = "libaom_pin_test",
+    srcs = ["libaom_pin_test.sh"],
+    data = ["libaom_pin.txt"],
+)
+
+cmake(
+    name = "libaom",
+    build_args = ["--parallel"],
+    cache_entries = {
+        "BUILD_SHARED_LIBS": "OFF",
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_OSX_ARCHITECTURES": "arm64",
+        "CMAKE_OSX_DEPLOYMENT_TARGET": "26.0",
+        "CONFIG_AV1_ENCODER": "1",
+        "CONFIG_AV1_DECODER": "0",
+        "CONFIG_REALTIME_ONLY": "1",
+        "ENABLE_DOCS": "0",
+        "ENABLE_EXAMPLES": "0",
+        "ENABLE_TESTS": "0",
+        "ENABLE_TOOLS": "0",
+        "CMAKE_C_FLAGS": "-fno-common",
+        "CMAKE_CXX_FLAGS": "-fno-common",
+    },
+    lib_source = "@libaom_src//:all_srcs",
+    out_static_libs = ["libaom.a"],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "libaom_static_lib",
+    srcs = [":libaom"],
+    output_group = "libaom.a",
+    visibility = ["//visibility:public"],
+)
+
+cmake(
+    name = "libopus",
+    cache_entries = {
+        "CMAKE_BUILD_TYPE": "Release",
+        "BUILD_SHARED_LIBS": "OFF",
+        "OPUS_BUILD_SHARED_LIBRARY": "OFF",
+        "OPUS_BUILD_PROGRAMS": "OFF",
+        "OPUS_BUILD_TESTING": "OFF",
+    },
+    lib_source = "@libopus_src//:all_srcs",
+    out_static_libs = ["libopus.a"],
+    visibility = ["//visibility:public"],
+)
+
+sh_test(
+    name = "libopus_pin_test",
+    srcs = ["libopus_pin_test.sh"],
+    data = ["libopus_pin.txt"],
+)

@@ -1,0 +1,181 @@
+load("@rules_swift//swift:swift.bzl", "swift_library", "swift_test")
+load("@rules_swift//swift:swift_interop_hint.bzl", "swift_interop_hint")
+
+# The C shim Swift imports as `CPionBridge`. shim.c is deliberately empty: every symbol is
+# provided by the pion c-archive at link time. The header is the hand-written pion_bridge.h
+# from the Go module, NOT the cgo-generated one.
+#
+# THE HEADER AND THE ARCHIVE MOVED TOGETHER to LLV's bridge. The ABI kept every name and signature
+# it had, so nothing in Sources/RdevHostKit changed with it; what changed is which Go module
+# implements the symbols.
+cc_library(
+    name = "CPionBridge",
+    srcs = ["Sources/CPionBridge/shim.c"],
+    hdrs = ["//host/streaming-engine/PionBridge:pion_bridge.h"],
+    aspect_hints = [":CPionBridge_interop"],
+    includes = ["Sources/CPionBridge/include"],
+)
+
+# rules_swift generates the module map for a cc_library from this hint, which is how
+# `import CPionBridge` resolves without hand-maintaining one.
+swift_interop_hint(
+    name = "CPionBridge_interop",
+    module_name = "CPionBridge",
+)
+
+# The C shim Swift imports as `COpusBridge`.
+#
+# NOT AN EMPTY SHIM, unlike CPionBridge's: opus_encoder_ctl is a C VARIADIC and Swift cannot call
+# one, so every ctl needs a fixed-signature wrapper on the C side. See copus_bridge.h.
+#
+# NO SYMBOL-LOCALIZATION GENRULE, unlike //host/streaming-engine/Sources/CAOMBridge. That machinery
+# exists because libwebrtc.a statically embeds its own libaom and both would land in one binary.
+# libopus reaches only this package, and tools/RdevViewer — the sole libwebrtc-linked target —
+# depends on //host/RdevCore, not on RdevHostKit. There is no second Opus to collide with.
+cc_library(
+    name = "COpusBridge",
+    srcs = ["Sources/COpusBridge/shim.c"],
+    hdrs = ["Sources/COpusBridge/include/copus_bridge.h"],
+    aspect_hints = [":COpusBridge_interop"],
+    includes = ["Sources/COpusBridge/include"],
+    deps = ["//third_party:libopus"],
+)
+
+swift_interop_hint(
+    name = "COpusBridge_interop",
+    module_name = "COpusBridge",
+)
+
+# The host, minus every trace of being a CLI. 25 sources: the 25 that used to sit beside
+# main.swift, plus RdevHostRuntime, minus QRMatrix (which moved to the harness — printing a
+# scannable QR to a terminal is a CLI affordance).
+#
+# It has a second consumer: the native app (//app:Xpromptvs, through //host/RdevAppHost; a C-ABI
+# dylib for Electron until 2026-09-25). That is the whole reason this is a library:
+# RdevHostRuntime owns no run loop, so both front-ends can supply their own.
+swift_library(
+    name = "RdevHostKit",
+    srcs = glob(["Sources/RdevHostKit/**/*.swift"]),
+    module_name = "RdevHostKit",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":COpusBridge",
+        "//host/RdevWorkspaceKit",
+        "//host/RdevWorkspacePacking",
+        ":CPionBridge",
+        "//host/RdevCore:RdevCore",
+        # §11's two gates. They live in their own module because a native CLIENT needs the
+        # initiator and nothing else this kit carries — see `//host/RdevE2E`.
+        "//host/RdevE2E:RdevE2E",
+        # §11's cryptography. RdevCore decides the POLICY and must never link a Rust archive — its
+        # suite runs in a third of a second and that is the reason it is separate — so the two halves
+        # meet here, in `E2ESignallingGate`, and nowhere else.
+        "//host/RdevNoise:RdevNoise",
+        # THE SIMULATOR SHIM (docs/superpowers/specs/2026-10-13-simulator-sources-design.md). Objective-C and
+        # loaded at RUNTIME: it links nothing of CoreSimulator, so this kit still runs on a Mac without Xcode.
+        "//host/RdevSimKit",
+        # THE TRANSPORT, AND IT IS LLV's NOW. //host/pion-bridge:pionbridge is deleted; this
+        # c-archive implements the same pion_* ABI over LLV's Session (rdev_abi.go).
+        #
+        # EXACTLY ONE GO ARCHIVE MAY EVER BE LISTED HERE. Each embeds a complete Go runtime, which
+        # is why a runtime A/B flag between the two engines was never available and why the swap
+        # had to be a single commit rather than a switch.
+        "//host/streaming-engine/PionBridge:llvpionbridge",
+        # THE PRODUCT DEPENDS ON THE IMPORTED ENGINE ON PURPOSE FROM HERE ON. LLVEncoderAdapter
+        # runs LLV's libaom AV1 encoder, so //host/streaming-engine/Sources/LLVCore reaches
+        # the product (//app:Xpromptvs). This INVERTS the product invariant the import
+        # sub-project pinned ("somepath from libRdevHost into the engine is empty"), which is why
+        # scripts/gate-engine-product-edge.sh now asserts the exact path instead of its absence.
+        # The libwebrtc-linked engine targets stay testonly and stay out; only these two cross.
+        "//host/streaming-engine/Sources/LLVCore:LLVCore",
+    ],
+)
+
+# TEST-ONLY. A private tmux server (`-L`, `-f /dev/null` on every command, killed and its socket
+# removed on stop) and a stream's snapshot read from it exactly as the product reads one. Shared by
+# RdevHostKitTests' TmuxSnapshotAgreementTests and //tools/TmuxSnapshotFixtures, so the committed
+# protocol/fixtures/tmux-snapshot/ are WRITTEN by the same code the freshness test checks them with.
+swift_library(
+    name = "RdevTmuxRig",
+    testonly = True,
+    srcs = ["TestSupport/PrivateTmux.swift"],
+    module_name = "RdevTmuxRig",
+    visibility = ["//tools/TmuxSnapshotFixtures:__pkg__"],
+    deps = [
+        ":RdevHostKit",
+        "//host/RdevCore:RdevCore",
+    ],
+)
+
+# RdevHostKit had NO test target until 2026-08-19, and AGENTS.md's Conventions said to verify host
+# changes with `bazelisk build` plus the smokes. That is not adequate for LLVEncoderAdapter's
+# delivery contract: a threading change is invisible to a build, and the smokes cannot construct a
+# non-AV1 encoder at all — RDEV_TEST_PATTERN=1 has one source and the product path is AV1-only.
+#
+# Deliberately small. Pure, derivable logic still belongs in //host/RdevCore, which is where this
+# repo's convention puts it; what lives here is what needs the host's own types.
+#
+# 57 files, 593 XCTest tests (2026-10-14; `<testcase`s in a run's test.xml, two of them skips: RDEV_LIVE_RELAY and RDEV_TMUX_FLOOD unset). Two of them (ScrollEventBuilderTests, KeyEventBuilderTests) assert the
+# exact CGEvent fields rdev puts on the HID stream: CONSTRUCTING a CGEvent needs no permission and
+# only POSTING one is gated by Accessibility, which is what lets them run with no window, no TCC
+# grant and no GUI session. What they cannot see is whether the event reaches an app — that is
+# scripts/gate-window-input.sh. Same eyeball rule as RdevCore's counts: nothing enforces this.
+swift_test(
+    name = "RdevHostKitTests",
+    srcs = glob(["Tests/RdevHostKitTests/**/*.swift"]),
+    module_name = "RdevHostKitTests",
+    # LOAD-BEARING, for the same reason RdevCore's test target declares it: the E2E suites read
+    # protocol/fixtures/*.json by walking up from #filePath, and that arithmetic works unchanged
+    # inside the runfiles tree — but only if the files are THERE. Without this the suite fails with
+    # "no such file", which is the graph doing its job rather than a regression.
+    data = ["//protocol:fixtures"],
+    deps = [
+        ":RdevHostKit",
+        ":RdevTmuxRig",
+        "//host/RdevCore:RdevCore",
+        "//host/RdevCore:RdevTermCorpus",
+        "//host/RdevNoise:RdevNoise",
+        # EncodedAccessUnit is LLVCore's — the tests construct one to drive `deliverForTest`.
+        "//host/streaming-engine/Sources/LLVCore:LLVCore",
+    ],
+)
+
+# A tmux server rdev starts is launchd's (docs/terminal.md): `TmuxRunner.newSession` bootstraps a one-shot
+# launchd job, which Bazel's darwin-sandbox refuses (the session then starts directly, and the coalition
+# test fails). So these run UNSANDBOXED, in their own target, and the suite above keeps the sandbox. Needs
+# tmux and a GUI login (launchd's `gui/<uid>` domain).
+swift_test(
+    name = "RdevHostKitLaunchdTests",
+    srcs = glob(["Tests/RdevHostKitLaunchdTests/**/*.swift"]),
+    module_name = "RdevHostKitLaunchdTests",
+    tags = ["no-sandbox"],
+    deps = [
+        ":RdevHostKit",
+        ":RdevTmuxRig",
+        "//host/RdevCore:RdevCore",
+    ],
+)
+
+# Real AV1 codec/pixel qualification without the unrelated tmux integration matrix.
+# The file remains in RdevHostKitTests too; this target shortens codec RED/GREEN runs.
+swift_test(
+    name = "AV1ReferenceCodecTests",
+    srcs = ["Tests/RdevHostKitTests/AV1ReferenceCodecTests.swift"],
+    deps = [
+        ":RdevHostKit",
+        "//host/RdevCore:RdevCore",
+        "//host/streaming-engine/Sources/LLVCore:LLVCore",
+    ],
+)
+
+swift_test(
+    name = "AV1ReferenceRecoveryTests",
+    srcs = ["Tests/RdevHostKitTests/AV1ReferenceRecoveryTests.swift"],
+    deps = [":RdevHostKit", "//host/RdevCore:RdevCore"],
+)
+
+swift_test(
+    name = "AV1QualificationTests",
+    srcs = ["Tests/RdevHostKitTests/AV1QualificationFrameTests.swift", "Tests/RdevHostKitTests/AV1QualificationReplayTests.swift"],
+    deps = [":RdevHostKit", "//host/RdevCore:RdevCore", "//host/streaming-engine/Sources/LLVCore:LLVCore"],
+)

@@ -1,0 +1,1593 @@
+/* ===== Fonts (self-hosted; no CDN request, works offline and over LAN) ==============================
+   Both families are variable woff2 (SIL OFL 1.1), one file per subset covering the whole weight range.
+   NOTE the mono subsets do NOT contain U+2500-259F (box drawing / block elements): the terminal's DOM
+   renderer draws them from the font stack's fallback (Menlo on Apple), the WebGPU renderer itself. */
+@font-face {
+  font-family: "Bricolage Grotesque"; font-style: normal; font-weight: 400 700; font-display: swap;
+  src: url("/fonts/bricolage-grotesque-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308,
+    U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Bricolage Grotesque"; font-style: normal; font-weight: 400 700; font-display: swap;
+  src: url("/fonts/bricolage-grotesque-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "JetBrains Mono"; font-style: normal; font-weight: 400 700; font-display: swap;
+  src: url("/fonts/jetbrains-mono-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308,
+    U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "JetBrains Mono"; font-style: normal; font-weight: 400 700; font-display: swap;
+  src: url("/fonts/jetbrains-mono-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* ===== Design tokens ================================================================================
+   Ported from the Relay Terminal 2026 mockup. Gradients are flattened to solids and backdrop-filter is
+   dropped by decision: with no blur behind it, a translucent panel is just a flat blend, and an opaque
+   tab bar means a dragged window can't ghost through it. Tints, borders, scrims and shadows keep their
+   alpha — they sit ON TOP of solid surfaces, where alpha is still the right model. */
+:root {
+  --font-ui: "DM Sans", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", Menlo, Monaco, "DejaVu Sans Mono", "Courier New", monospace;
+  --tabbar-h: 64px;
+  --statusbar-h: 38px;
+  /* ONE horizontal rail for every band. The tab bar, the mobile window titlebar and the mobile palette
+     head all inset their contents by this, which is what puts the `+`, a window's ✕ and the palette's ✕
+     in a single column at the right edge — and the first tab the same distance in from the left. */
+  --rail-x: 16px;
+  /* The rail as each SIDE pays it: `viewport-fit=cover` puts a phone's Dynamic Island and rounded corners
+     inside the page in landscape (68pt a side on an iPhone Air), so every full-bleed band clears them
+     plus the rail. Zero in portrait, and on everything without insets, so there these ARE --rail-x. A
+     phone keeps the tabbed layout on its side since 2026-09-28, and every tabbed surface pads with these
+     — portrait was the only place they had been laid out. `e2e/landscape-check.mjs` measures them. */
+  --rail-l: calc(var(--rail-x) + env(safe-area-inset-left));
+  --rail-r: calc(var(--rail-x) + env(safe-area-inset-right));
+  /* The bottom safe-area inset, as a variable so ViewportFit can zero it while the soft keyboard is
+     up — an open keyboard already covers the home indicator, and `env()` itself never changes. */
+  --safe-b: env(safe-area-inset-bottom);
+  /* The mobile hit target. Every control in the tab bar and in a window's titlebar is this tall, so the
+     phone UI has one size instead of a 42px tab beside a 38px button above a 34px ✕. */
+  --touch: 44px;
+  font-family: var(--font-mono);
+}
+
+:root[data-theme="dark"] { --term-bg: var(--terminal-background, #181817); --ph: #ffffff08; --glow: 0 0 0 1px #a4d9e044; --tab-shadow: none; }
+:root[data-theme="light"] { --term-bg: var(--terminal-background, #fff); --ph: #00000008; --glow: 0 0 0 1px #326c7544; --tab-shadow: none; }
+
+/* Only the status dot animates now (the mockup's aurora is gone), so this is the whole motion surface. */
+@keyframes rl-pulse { 0%, 100% { opacity: 1 } 50% { opacity: .35 } }
+@keyframes rl-pop { from { opacity: 0; transform: translateY(6px) scale(.99) } to { opacity: 1; transform: none } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; }
+}
+
+/* Hidden scrollbars for the tab bar; thin styled ones elsewhere. */
+.rl-noscroll { scrollbar-width: none; -ms-overflow-style: none; }
+.rl-noscroll::-webkit-scrollbar { display: none; width: 0; height: 0; }
+.rl-scroll::-webkit-scrollbar { width: 9px; height: 9px; }
+.rl-scroll::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 6px; }
+.rl-scroll::-webkit-scrollbar-track { background: transparent; }
+
+* { box-sizing: border-box; }
+/* iOS AUTOSIZES text by itself in landscape: a dashboard paragraph went 17.3px → 24px on an iPhone Air
+   turned on its side, and was still 24px back in portrait (measured 2026-09-28). The page sizes its
+   own text for every layout, so it asks for none. */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+html, body { margin: 0; height: 100%; overflow: hidden; overscroll-behavior: none; }   /* lock document scroll + no rubber-band (ViewportFit pins <body> to the visual viewport on touch) */
+
+/* ===== Text selection ===============================================================================
+   Off everywhere by default: this is an app surface, not a document, and a stray drag across tabs, the
+   footer, palette rows or gallery tiles highlighting them reads as a bug (and on touch it fights the
+   window-drag and terminal-scroll gestures). `user-select` inherits, so one root rule covers everything
+   and the exceptions below opt back in.
+
+   TWO exceptions, both real:
+   - the terminal — xterm runs its OWN selection model (a .xterm-selection overlay driven by
+     SelectionService, not native ranges), but `user-select: text` keeps copy behaving natively for the
+     helper textarea and costs nothing;
+   - real text inputs — the pairing field and the palette query. Without this you cannot select, replace
+     or drag-correct what you typed, which is a genuine regression, not a cosmetic one. */
+:root { user-select: none; -webkit-user-select: none; }
+#term-surface, #xterm, input, textarea { user-select: text; -webkit-user-select: text; }
+/* Three fixed bands: #tabbar / #stage (flex:1) / #statusbar. */
+body { background: var(--app-bg); color: var(--text); overflow: hidden; font-family: var(--font-ui);
+       display: flex; flex-direction: column; }
+.hidden { display: none !important; }
+
+/* ===== Tab bar (64px) ============================================================================== */
+/* `viewport-fit=cover` exposes the LANDSCAPE notch too, so the horizontal rail has to clear it or the
+   first tab sits under the sensor housing on an iPhone held sideways. Bottom needs nothing here — the
+   status bar is below this. */
+#tabbar {
+  height: var(--tabbar-h); flex: none;
+  display: flex; align-items: stretch; gap: 6px;
+  padding: 0 var(--rail-r) 0 var(--rail-l);
+  background: var(--tabbar); border-bottom: 1px solid var(--border);
+  overflow: hidden; position: relative; z-index: 6;
+}
+/* The tab list SCROLLS AND CLIPS inside its own box, which ends where `.tabbar-right` begins. The
+   `overflow-x: auto` is what does that, and it does two jobs at once: it clips, and — because a
+   scroll container's automatic minimum size resolves to 0 — it is also what lets this flex item
+   shrink below its content instead of shoving the search group off the bar. The `min-width: 0` is
+   belt-and-braces for a future edit that changes the overflow; it is NOT what makes this work today,
+   and removing it alone changes nothing (measured). */
+.tabbar-scroll {
+  display: flex; align-items: stretch; gap: 6px;
+  flex: 1; min-width: 0; overflow-x: auto;
+}
+/* LOAD-BEARING — this group must never scroll out of reach: once the last source is unsubscribed it
+   is the only route back to the palette, and on mobile it is the ONLY one at any time. It used to be
+   `position: sticky; right: 0` inside the scrolling bar, with an opaque background masking the tabs
+   passing underneath — an overlay, which showed as a seam and painted over live content. Being a
+   SIBLING of the scroller is strictly stronger: it is outside the scrolling box, so no amount of
+   scrolling can move it, and it needs no background to hide anything. */
+.tabbar-right {
+  display: flex; align-items: center; gap: 8px; flex: none; padding-left: 12px;
+}
+
+.palette-open {
+  display: flex; align-items: center; gap: 9px; height: 38px; padding: 0 14px;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 9px;
+  color: var(--muted); font-family: var(--font-ui); font-size: 13.5px; cursor: pointer; white-space: nowrap;
+}
+.palette-open:hover { color: var(--text); border-color: var(--border2); }
+.palette-open kbd {
+  font-family: var(--font-mono); font-size: 11.5px; padding: 3px 6px;
+  background: var(--surface3); border: 1px solid var(--border); border-radius: 4px; color: var(--faint);
+}
+.palette-open-plus { display: none; }
+
+/* MOBILE: one control, not two. The tab strip's `+` is hidden and this button takes its place — same
+   palette, but presented as a bare `+` with a solid border. It lives in the sticky `.tabbar-right`, so
+   unlike the strip's `+` it stays reachable no matter how far the tabs scroll. */
+:root[data-layout="tabbed"] #tab-add { display: none; }
+:root[data-layout="tabbed"] .palette-open-text,
+:root[data-layout="tabbed"] .palette-open kbd { display: none; }
+:root[data-layout="tabbed"] .palette-open-plus { display: block; }
+:root[data-layout="tabbed"] .palette-open {
+  width: var(--touch); height: var(--touch); padding: 0; justify-content: center; border-radius: 10px;
+  border: 1px solid var(--border2); color: var(--text); font-size: 22px; line-height: 1;
+}
+
+/* ===== Stage ======================================================================================= */
+#stage { position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; background: var(--term-bg); }
+
+/* ===== Status footer (38px) ======================================================================== */
+/* THE ONLY CHROME AT A PHYSICAL SCREEN EDGE. #tabbar / #stage / #statusbar are the three bands, so
+   the status bar is the one thing the home indicator (or Android's gesture bar) can sit on top of —
+   the key strips live inside #stage, above it, and need nothing.
+
+   The inset is added to BOTH the height and the padding, never folded into `--statusbar-h`:
+   `barHeight()` does `parseFloat(getPropertyValue("--statusbar-h"))`, and an unregistered custom
+   property hands back its literal token stream, so a `calc(...)` there parses as NaN and
+   `statusBarHeight()` silently becomes 0 — which would break fit-to-screen rather than the layout,
+   somewhere else entirely. */
+#statusbar {
+  height: calc(var(--statusbar-h) + var(--safe-b)); flex: none;
+  display: flex; align-items: center; gap: 0;
+  padding: 0 calc(20px + env(safe-area-inset-right)) var(--safe-b)
+             calc(20px + env(safe-area-inset-left));
+  background: var(--surface); border-top: 1px solid var(--border);
+  font-family: var(--font-mono); font-size: 12.5px; color: var(--muted);
+  position: relative; z-index: 6;
+}
+.status-cells { display: flex; align-items: center; flex: 1; min-width: 0; overflow: hidden; }
+.status-cell { white-space: nowrap; }
+.status-cell[data-cell="state"] { color: var(--accent-text); }
+/* The transport qualifier ("p2p"/"relay") sits inside the state cell in a secondary colour, so it reads
+   as part of "connected" rather than as a separate status item. */
+.status-detail { color: var(--muted); }
+.status-divider { width: 1px; height: 16px; background: var(--border); margin: 0 14px; flex: none; }
+
+.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--faint); margin-right: 6px; flex: none; }
+.dot[data-state="connected"] { background: #fff; opacity: 1; animation: none; }
+#status-dot[data-state="connected"] { transform: translateY(0); }
+#statusbar:has(#status-dot[data-state="connected"]) .status-cell[data-cell="state"] { transform: translateY(-1px); }
+.dot[data-state="connecting"] { background: var(--warn); }
+.dot[data-state="error"] { background: var(--red); }
+
+/* xterm.js needs a container with a real pixel size for FitAddon to measure; fill #stage the same
+   way .claim-overlay does.
+   The padding is the mockup's terminal inset.
+
+   `box-sizing: content-box` is HISTORY, no longer load-bearing. It was, while #xterm itself was the
+   container FitAddon measured: FitAddon reads `getComputedStyle(parent).width/height`, which under
+   border-box returns the BORDER box, padding included (measured 169x44 against a 1440x798 stage where
+   only 163x42 fit). Under the deck (term-deck.ts) FitAddon measures each instance's parent,
+   `.xterm-inst` — absolute at inset 0 in a `.xterm-tab` that is 100%x100% of #xterm's CONTENT box,
+   whatever #xterm's box-sizing — and that element has no padding. Kept because it is harmless and
+   `inset: 0` stretches the same border box either way; if the padding ever moves onto `.xterm-tab` or
+   `.xterm-inst`, THAT element needs content-box. `term-inset-check` measures the result.
+
+   `overflow: clip` is where the rows drawn INTO the inset stop (overscan-rows.ts, smooth scrolling on):
+   at #xterm's own box, which is the tab bar, the status bar and the key strip's edge on every layout.
+   CLIP, never `hidden`: a hidden box is still a scroll container, and focusing xterm.js's helper
+   textarea (parked off to the left) could scroll it. */
+/* EACH SIDE PAYS ITS SAFE-AREA INSET on every layout (2026-10-04): the floating layout's flat 24 px had never met
+   one until an iPhone Duo's inner display on its side (890 pt: floating) put the terminal's text under its camera.
+   Per side — the Duo's two differ. A desktop's insets are 0: the 24 px it was. */
+#xterm { position: absolute; inset: 0; box-sizing: content-box; padding: 20px max(24px, env(safe-area-inset-right)) 12px max(24px, env(safe-area-inset-left)); overflow: clip; }
+/* A held finger on the terminal or a titlebar opens the PASTE menu (press-hold.ts; paste-and-drop design
+   §2.2), so iOS must offer no callout of its own there. */
+#xterm, .win-titlebar { -webkit-touch-callout: none; }
+:root[data-layout="tabbed"] #xterm {
+  padding: 8px max(8px, env(safe-area-inset-right)) 8px max(8px, env(safe-area-inset-left));
+}
+/* One slot per open tab (term-deck.ts). The slot is in flow and fills #xterm's CONTENT box, so FitAddon
+   (which reads the instance's parent) measures exactly what the single instance used to. Hidden slots
+   are display:none; an instance being written by a snapshot is visibility:hidden INSIDE its slot, so it
+   renders while the live one is still on screen and the swap shows no blank frame. */
+#xterm > .xterm-tab { position: relative; width: 100%; height: 100%; }
+#xterm > .xterm-tab.is-hidden { display: none; }
+#xterm > .xterm-tab > .xterm-inst { position: absolute; inset: 0; }
+#xterm > .xterm-tab > .xterm-inst.is-pending { visibility: hidden; pointer-events: none; }
+/* A TAB'S FIRST CONTENT FADES IN (TermDeck.watchFirstContent, 2026-10-03): transparent until there is text to
+   see, then one short fade — never again for that tab, never on a switch. Only the text fades: the instance's
+   background is #stage's own --term-bg. Reduced motion (shell.css) drops the animation: it just appears. */
+#xterm > .xterm-tab[data-awaiting-content] { opacity: 0; }
+#xterm > .xterm-tab.is-fading-in { animation: term-fade-in calc(.18s * var(--motion-scale, 1)) ease-out; }
+@keyframes term-fade-in { from { opacity: 0; } }
+/* THE WEBGPU PATH DRAWS EVERY TAB INTO THE AREA'S ONE CANVAS (webgpu/surface.ts), first in #xterm, UNDER the
+   instances: what xterm.js paints over it lets it through, and it takes the SHOWN slot's fade, which no longer
+   reaches the text. Nothing about it is ever toggled per tab — a switch changes what is drawn in it. */
+.xterm.xterm-gpu .xterm-scrollable-element, .xterm.xterm-gpu .xterm-viewport { background-color: transparent !important; }
+#xterm:has(> .xterm-tab:not(.is-hidden)[data-awaiting-content]) > .xterm-gpu-surface { opacity: 0; }
+#xterm:has(> .xterm-tab.is-fading-in:not(.is-hidden)) > .xterm-gpu-surface {
+  animation: term-fade-in calc(.18s * var(--motion-scale, 1)) ease-out;
+}
+#xterm > .xterm-measure { visibility: hidden; pointer-events: none; }
+/* THE OFFER'S SCREEN (offer-screen.ts): the active tab's screen, painted while WebRTC connects, UNDER the slots — first
+   in #xterm after the canvas, so a slot (transparent until its first content) shows it through and then fades in over
+   it. Absolute over #xterm's padding box with #xterm's own padding INHERITED, so its `.xterm-inst` fills the same
+   content box a slot's does — the same grid, in the same place. Inert: it takes no pointer, no key, no focus. */
+#xterm > .xterm-preview { position: absolute; inset: 0; box-sizing: border-box; padding: inherit; pointer-events: none; }
+#xterm > .xterm-preview > .xterm-inst { position: relative; width: 100%; height: 100%; }
+/* AN IMAGE PATH THE TERMINAL PRINTED (term-paths.ts, file-viewer.ts). A tapped path is tinted over its cells while the
+   host is asked (a decoration: a DOM box over whichever renderer draws the rows, so the tint must let the text through).
+   The image opens in a MODAL — the top layer, over everything — a sheet over the whole screen on the tabbed layout (a
+   phone), a window otherwise; the picture fits inside it and is never scaled up past its own pixels. */
+.term-path-tapped { background: color-mix(in srgb, var(--accent) 35%, transparent); border-radius: 3px; pointer-events: none; }
+.file-viewer.ss-dialog {
+  position: fixed; inset: 0; margin: auto; width: fit-content; height: fit-content;
+  padding: 0; border: 1px solid #ffffff0b; border-radius: 12px;
+  background: var(--settings-canvas, #181817); color: #dedee0;
+  font: 400 13px/1.5 -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  box-shadow: 0 16px 48px #0006; max-width: calc(100vw - 32px); max-height: calc(100vh - 48px); overflow: hidden;
+}
+.file-viewer[open] { display: flex; flex-direction: column; }
+.file-viewer::backdrop { background: var(--scrim); }
+.file-viewer-bar { display: flex; align-items: center; gap: 12px; min-height: 38px; padding: 4px 8px 4px 12px; border: 0; }
+.file-viewer-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 14px/1.4 -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }
+.file-viewer .file-viewer-close { position: relative; top: -2px; flex: none; width: 26px; height: 26px; min-height: 26px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: #dedee0; font: 400 20px/26px -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }
+.file-viewer .file-viewer-close:hover:not(:disabled) { background: transparent; color: #fff; }
+.file-viewer .file-viewer-close:active:not(:disabled) { background: transparent; color: #a6a6aa; }
+.file-viewer-body { display: flex; align-items: center; justify-content: center; min-width: 0; min-height: 0; overflow: auto; }
+.file-viewer-image { display: block; max-width: min(calc(100vw - 34px), 1280px); max-height: calc(100vh - 88px); object-fit: contain; border-radius: 0; }
+.file-viewer-status { margin: 24px; color: var(--muted); font-size: 13px; }
+.file-viewer-status[hidden], .file-viewer-image[hidden] { display: none; }
+:root[data-layout="tabbed"] .file-viewer.ss-dialog {
+  width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; border: 0; border-radius: 0;
+  padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom);
+}
+:root[data-layout="tabbed"] .file-viewer-bar { padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(8px, env(safe-area-inset-right)); }
+:root[data-layout="tabbed"] .file-viewer-body { flex: 1; }
+:root[data-layout="tabbed"] .file-viewer-image {
+  max-width: 100vw; max-height: calc(100dvh - 54px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+}
+
+/* LOAD-BEARING: xterm's helper textarea is an INVISIBLE IME/accessibility anchor (opacity 0, ~one cell)
+   that xterm parks at the text cursor. It hit-tests ABOVE the floating source windows, so whenever a
+   window's titlebar control happened to sit over the terminal cursor it silently swallowed the click —
+   measured: elementFromPoint returned the textarea and the button's own handler fired 0 times.
+   (Why it wins the hit test is not fully explained by its z-index of -5; the fix targets hit-testing
+   itself, which is the actual failure.) It never needs pointer events: xterm focuses it programmatically
+   from .xterm-screen's own mouse handlers, so typing, selection and click-to-focus are unaffected. */
+.xterm-helper-textarea { pointer-events: none; }
+
+/* ===== Multi-source windows — WindowManager is the single video renderer ============================ */
+/* z-index 7 puts windows ABOVE #tabbar and #statusbar (both 6) and below .claim-overlay (10),
+   .welcome-overlay (50) and .palette-overlay (100). LOAD-BEARING: the bars used to win the hit test, so a
+   window dragged into the bottom 38px had its titlebar behind the status bar and could never be grabbed
+   again (measured: elementFromPoint returned #statusbar at every y in that band). Mobile is unaffected —
+   :root[data-layout="tabbed"] #windows overrides this to z-index 1 below. */
+#windows { position: fixed; inset: 0; pointer-events: none; z-index: 7; }
+#windows.hidden { display: none; }   /* SessionControl/reconcileSimVisibility hides the whole surface (all windows) */
+#windows .source-window { pointer-events: auto; }
+
+/* Per-window controls (fps/res/rate) live in each window's own titlebar on BOTH layouts. The global
+   ⋯/#video-prefs popover that used to serve mobile is gone (2026-07-28) — mobile shows the window's
+   titlebar instead. The old global #sim-toggle show/hide button went earlier (its role: the tab strip
+   + per-window close). */
+.source-window { position: fixed; width: 280px; display: flex; flex-direction: column;
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 15px;
+  box-shadow: var(--shadow); overflow: hidden; }
+.source-window.focused { border-color: var(--border2); box-shadow: var(--glow), var(--shadow); }
+/* A DRAG OVER THE PICTURE (paste-and-drop design §5): the window that will take the drop, marked OUTSIDE
+   its box, where the picture cannot cover it. Not focus indication — that stays off everywhere. */
+.source-window.drop-target { outline: 2px solid var(--accent); outline-offset: 2px; }
+.win-titlebar { display: flex; align-items: center; gap: 9px; height: 34px; flex: none;
+  padding: 0 11px; background: var(--titlebar); border-bottom: 1px solid var(--border);
+  cursor: grab; touch-action: none; }
+.win-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex: none; }
+/* WHICH WINDOW HOLDS THE KEYBOARD. Load-bearing as UI, not decoration: while a window has DOM focus
+   every key goes to the host — ⌘K included — and the only way back to rdev's own surface is the
+   mouse, so "why is ⌘K dead" has to be answerable by looking. The tint rides the titlebar (not
+   .win-title, whose text-overflow would clip a marker) and the dot gains a ring. */
+.win-body:focus { outline: none; }
+.win.has-keyboard .win-titlebar { background: var(--accent-dim); }
+.win.has-keyboard .win-dot { box-shadow: 0 0 0 3px var(--accent-dim); }
+.win-title { flex: 1; min-width: 0; font-family: var(--font-mono); font-size: 11.5px; font-weight: 500;
+  color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* The right-hand cluster. WindowManager.pinControls slides this back into the viewport (translateX) when
+   the window overflows the right edge — windows render at actual host size and are allowed to overflow,
+   which otherwise puts these controls outside the viewport where they cannot be clicked at all.
+   `position: relative` + a z-index keeps the shifted cluster above the title it may slide over. */
+.win-controls { display: flex; align-items: center; gap: 9px; flex: none;
+  position: relative; z-index: 1; background: var(--titlebar); padding-left: 6px; }
+.win-minimize, .win-close { width: 22px; height: 22px; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  background: transparent; border: none; border-radius: 5px;
+  color: var(--muted); line-height: 1; cursor: pointer; }
+.win-minimize { font-size: 15px; }
+.win-close { font-size: 14px; }
+.win-minimize:hover { background: var(--surface3); color: var(--text); }
+.win-close:hover { background: var(--red); color: #fff; }
+.win-titlebar select { font-size: 10px; padding: 1px 2px; max-width: 42px; flex: none;
+  background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 3px; }
+/* The codec select carries the widest option text ("Auto (H.265)"), so it needs more room than the
+   42px the numeric selects share. */
+.win-codec { max-width: 78px; }
+/* A PIN THIS BROWSER REFUSED. The select keeps showing the request (writing the negotiated codec back
+   would silently drop the window out of the pin), so the disagreement has to be visible some other way.
+   RESTORED 2026-08-20 with the codecs it watches — an iPad with no AV1 decoder answers H.265 for an
+   AV1 pin, and between the wire increment and now the select went on claiming AV1 with nothing to
+   say otherwise. Amber rather than red: the connection is working, it is just not working the way
+   the user asked. */
+.win-codec[data-unmet] { color: #d98a1f; border-color: #d98a1f; }
+
+/* AUDIO STATE ON THE TITLEBAR. Two silent states that must not look the same: `muted` is a setting
+   the user chose and can undo; `yielded` is a fact about the host — SCK cannot isolate a window's
+   audio from its application's, so another window of the same app carries it.
+
+   AMBER FOR YIELDED, the same #d98a1f `.win-codec[data-unmet]` uses and for the same reason: it is
+   the host doing something the user did not ask for, and it must not read as a setting of theirs.
+   Muted is quiet grey, because it IS their setting.
+
+   WORDS, NOT GLYPHS — the self-hosted JetBrains Mono subsets are latin + latin-ext, so a speaker
+   symbol falls back at unpredictable ink. Same rule as `Fit`, `Raise` and the `×` close glyph. */
+.win-audio-badge { display: none; }
+.win-audio-badge[data-audio] {
+  display: inline-block; margin-inline-start: 6px; padding: 1px 5px;
+  font-size: 10px; line-height: 1.4; border-radius: 3px; white-space: nowrap;
+  border: 1px solid var(--border2);
+}
+.win-audio-badge[data-audio="muted"] { color: var(--faint); }
+.win-audio-badge[data-audio="yielded"] { color: #d98a1f; border-color: #d98a1f; }
+.win-rate { font-size: 10px; color: var(--faint); white-space: nowrap; flex: none; font-family: var(--font-mono); }
+/* Fit-to-screen mode toggle. Styled like the neighbouring selects so the cluster reads as one row of
+   controls; --accent is a near-white in dark and a near-black in light, so the pressed fill inverts
+   cleanly in both themes. */
+.win-fit { font-size: 10px; padding: 1px 5px; flex: none; font-family: var(--font-ui);
+  background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 3px;
+  line-height: 1.6; cursor: pointer; }
+.win-fit:hover { border-color: var(--border2); }
+.win-fit[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+/* The Zoom mode button. Styled exactly as .win-fit is — they are neighbours in the same cluster, and a
+   third look inside a 34px strip reads as an accident rather than as a distinction. */
+.win-zoom { font-size: 10px; padding: 1px 5px; flex: none; font-family: var(--font-ui);
+  background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 3px;
+  line-height: 1.6; cursor: pointer; }
+.win-zoom:hover { border-color: var(--border2); }
+.win-zoom[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+/* MOBILE ONLY. The floating layout sizes the window to the source's own aspect and has a grip; glasses
+   has no touchscreen at all. Written as :not([data-layout="tabbed"]) so an UNSET layout — which is
+   every layout until watchLayoutMode fires its first callback — HIDES it, the same fail-safe direction
+   as PINNED_LAYOUTS being enumerated in window-manager.ts. */
+:root:not([data-layout="tabbed"]) .win-zoom { display: none; }
+/* Fit MOVES as well as resizes, so it cannot reuse .settling (which transitions left but not top).
+   .settling predates this and is deliberately left as it is. */
+.source-window.fitting { transition: width 160ms ease-out, height 160ms ease-out,
+  left 160ms ease-out, top 160ms ease-out; }
+@media (prefers-reduced-motion: reduce) { .source-window.fitting { transition: none; } }
+.win-body { flex: 1 1 auto; min-height: 0; position: relative; background: var(--term-bg); touch-action: none; }
+.win-body video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: var(--term-bg); touch-action: none; }
+/* `transform-origin: 0 0` is what `transformFor` in view-zoom.ts solves against — a point p maps to
+   `translate + z*p`, which is only true from this origin. INERT until a transform is written, and one
+   is written ONLY on a zoomed pinned layout. */
+.win-body video, .win-body canvas.win-paced { transform-origin: 0 0; }
+/* TESTING (`?render=canvas`): the paced canvas sits exactly where the <video> does and carries the
+   identical box, so fit-to-screen, the mobile always-fitted rule and every layout calculation are
+   unchanged. `object-fit` applies to <canvas> — it is a replaced element — which is what makes this
+   a one-line equivalence rather than new geometry code. The <video> keeps its box (it is the
+   `#screen` tap anchor) and is merely not painted. */
+.win-body canvas.win-paced { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: var(--term-bg); touch-action: none; pointer-events: none; }
+.source-window.resizing .win-body canvas.win-paced { transition: none; }
+/* Resize is request/confirm: while the grip is held (and until the host's reply lands) the body is blurred
+   to mark the frame as PROVISIONAL — the local rect is a request, not truth. `.settling` animates the jump
+   to whatever size the window really became. */
+.source-window.resizing .win-body { filter: blur(7px); }
+.source-window.resizing .win-body video { transition: none; }
+.source-window.settling { transition: width 160ms ease-out, height 160ms ease-out, left 160ms ease-out; }
+.source-window .win-body { transition: filter 140ms ease-out; }
+/* The trackpad-mode cursor. Drawn by the client because in that mode the finger is NOT under the
+   pointer, so the CSS cursor (which follows the finger) shows nothing useful. `pointer-events: none`
+   is load-bearing: it must never become the hit-test target for the taps it represents. */
+.trackpad-cursor { position: absolute; display: none; pointer-events: none; z-index: 2; }
+.source-window[data-pointer-mode="trackpad"] .trackpad-cursor { display: block; }
+.win-offline { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  text-align: center; padding: 0 16px; color: var(--text); background: rgba(0,0,0,0.72);
+  font-family: var(--font-ui); font-size: 13px; z-index: 1; pointer-events: none; }
+.win-offline.hidden { display: none; }
+/* Solid triangle rather than the old 45deg linear-gradient (no gradients, by decision). */
+/* Corner resize hit-zones — all four, and INVISIBLE: the cursor is the entire affordance, exactly as a
+   native window does it. (The old single bottom-left grip drew a solid accent triangle; with four corners
+   that would be four pieces of chrome on every window.) The NE zone overlaps the −/× cluster, but
+   `.win-controls` is positioned with z-index 1 and an opaque fill, so it paints above these (z-index auto)
+   and wins the hit test — the buttons stay clickable and NE stays grabbable outside them. */
+.win-resize { position: absolute; width: 16px; height: 16px; touch-action: none; }
+.win-resize[data-corner="nw"] { left: 0; top: 0; cursor: nwse-resize; }
+.win-resize[data-corner="ne"] { right: 0; top: 0; cursor: nesw-resize; }
+.win-resize[data-corner="sw"] { left: 0; bottom: 0; cursor: nesw-resize; }
+.win-resize[data-corner="se"] { right: 0; bottom: 0; cursor: nwse-resize; }
+
+.claim-overlay {
+  position: absolute; inset: 0; z-index: 10;
+  display: flex; align-items: center; justify-content: center;
+  overflow: auto; padding: 32px 24px; background: var(--app-bg);
+  font-family: var(--font-ui); text-align: center;
+}
+.claim-content { width: 100%; max-width: 440px; margin: auto; }
+.claim-symbol { display: block; margin: 0 auto 26px; color: var(--muted); stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.claim-symbol-device { fill: rgba(255, 255, 255, .025); }
+.claim-symbol-arrow { stroke: var(--text); }
+#claim-title { margin: 0; color: var(--text); font-size: 26px; line-height: 1.2; font-weight: 600; letter-spacing: -.65px; text-wrap: balance; }
+.claim-hint { max-width: 340px; margin: 14px auto 0; color: var(--muted); font-size: 15px; line-height: 1.55; text-wrap: pretty; }
+#claim-button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 12px;
+  min-height: 44px; margin-top: 28px; padding: 0 20px;
+  border: 0; border-radius: 10px; background: #e9e9ec; color: #202022;
+  cursor: pointer; font: 500 14px var(--font-ui);
+}
+#claim-button svg { stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+#claim-button:hover { background: #fff; }
+#claim-button:active { background: #ccc; }
+/* "Moving here…" (session-control.ts `claim`): the tap was taken and the claim waits for the host — no arrow. */
+#claim-button[aria-busy="true"] { cursor: progress; }
+#claim-button[aria-busy="true"] svg { display: none; }
+:root[data-layout="tabbed"] #claim-title { font-size: 24px; }
+
+/* ===== Toasts ====================================================================================== */
+/* The session's notices (`#sim-status-note`: boot/error, tmux, a paste's progress and outcome, flashes;
+   `#term-stream-note`: the terminal stream's standing "not updating"), centred under the tab bar OVER
+   the windows and the terminal. They sat in `.tabbar-right` beside the search button until 2026-10-02,
+   where a note was easy to miss and squeezed the tab strip on a phone. Two elements, so neither message
+   can overwrite or clear the other; each is collapsed while `:empty` and stacks under the first.
+
+   In `#stage`, so `top` is measured from the tab bar's bottom on every layout, and full screen (which
+   removes the bars) puts them at the top of the screen. z-index 11: above `#windows` (7 — floating
+   windows sit over both bars) and `#claim` (10 — "control moved to another device" is said exactly as a
+   tab goes passive), below `#welcome` (50) and `#palette` (100), which a person opened to read. The row
+   lets every pointer through but the toast's own box. A message goes after 6 s, held while a mouse is on
+   it, and a tap takes any note away (status-note.ts). */
+.toasts {
+  position: absolute; z-index: 11; top: var(--toast-top); left: var(--rail-l); right: var(--rail-r);
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  pointer-events: none;
+  --toast-top: 10px;
+}
+.term-stream-reconnect {
+  min-height: var(--touch); padding: 0 12px; margin-left: 8px;
+  border: 1px solid var(--border2); border-radius: 9px;
+  background: var(--surface3); color: var(--text); font: inherit; cursor: pointer;
+}
+.toast {
+  max-width: min(560px, 100%); padding: 9px 16px; border-radius: 10px;
+  background: var(--surface2); color: var(--text); border: 1px solid var(--border2);
+  box-shadow: 0 10px 30px #0005;
+  font: 500 13px/1.4 var(--font-ui); text-align: center; overflow-wrap: anywhere;
+  pointer-events: auto; cursor: pointer;
+  animation: toast-in calc(.18s * var(--motion-scale, 1)) ease-out;
+}
+.toast:empty { display: none; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(-6px); } }
+/* A note that GOES leaves the way it came (status-note.ts): `data-leaving` plays this, and the text — whose
+   `:empty` hides the toast — is taken away only when it has ended. Under reduced motion no animation runs,
+   and the note goes at once. Nothing to press while it leaves. */
+.toast[data-leaving] {
+  animation: toast-out calc(.18s * var(--motion-scale, 1)) ease-in forwards; pointer-events: none;
+}
+@keyframes toast-out { to { opacity: 0; transform: translateY(-6px); } }
+/* A phone's window surface: the window's titlebar is the tab bar's SECOND ROW (below), and its
+   controls must stay in sight and in reach. NOT in full screen, which hides that row and moves `data-tab`
+   to this surface on the way in — out-ranking the rule below, it put the toast over `Exit` and under the
+   Dynamic Island (toast-check C2). */
+:root[data-layout="tabbed"][data-tab="sim"]:not([data-fullscreen]) .toasts { --toast-top: calc(var(--touch) + 8px + 10px); }
+/* Full screen: below the line `Exit` sits on (`.win-fullscreen-exit`, 36px at 8px), so neither covers
+   the other however long the note. */
+:root[data-fullscreen] .toasts { --toast-top: calc(env(safe-area-inset-top) + 8px + 36px + 8px); }
+
+.sim-picker-menu {
+  position: absolute; top: 100%; left: 0; z-index: 20; margin: 4px 0 0; padding: 4px; list-style: none;
+  min-width: 220px; max-height: 60vh; overflow-y: auto;
+  background: #1b1b1b; border: 1px solid #333; border-radius: 6px; box-shadow: 0 6px 20px rgba(0,0,0,.5);
+}
+.sim-picker-menu li {
+  display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 4px; cursor: pointer;
+  white-space: nowrap;
+}
+.sim-picker-menu li[aria-disabled="true"] { cursor: default; opacity: .5; }
+.sim-picker-menu li:not([aria-disabled="true"]):hover { background: #2a2a2a; }
+.sim-picker-menu .sim-dot { width: 8px; height: 8px; border-radius: 50%; background: #555; flex: none; }
+.sim-picker-menu .sim-dot.running { background: #3fbf5f; }
+.sim-picker-menu .sim-name { flex: 1; }
+.sim-picker-menu .sim-check { color: #3fbf5f; }
+.sim-picker-menu .sim-refresh { justify-content: center; color: #9ab; border-top: 1px solid #333; margin-top: 4px; }
+
+/* Two-level submenu: a "Simulator" group and a "Window" group, each expanding to its own row list.
+   `.picker-group` overrides the generic `.sim-picker-menu li` row styling (flex row + hover) since it's
+   a vertical wrapper (header + sublist), not a clickable row itself. */
+.sim-picker-menu li.picker-group { display: block; padding: 0; cursor: default; white-space: normal; }
+.sim-picker-menu li.picker-group:hover { background: none; }
+.picker-group-header {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 8px; font-size: 12px; font-weight: 600; color: #9ab;
+  cursor: pointer; border-radius: 4px;
+}
+.picker-group-header:hover { background: #2a2a2a; }
+.picker-group-header[aria-expanded="true"] { color: #eee; }
+.picker-sublist { list-style: none; margin: 0; padding: 0 0 4px 10px; }
+.picker-sublist.hidden { display: none; }
+.window-name { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+
+
+/* ===== Mobile tabbed layout ===================================================================
+   Everything here is gated on :root[data-layout="tabbed"]; the default (floating) path is untouched. */
+
+/* term-surface fills the stage exactly where #xterm used to sit (no visual change on desktop).
+   ViewportFit pins <body> to the visual viewport, so #stage always equals the visible area and the
+   terminal simply reflows to fit above the keyboard — no transform, no custom scrollbar. */
+#term-surface { position: absolute; inset: 0; }
+
+/* A FINGER'S TEXT SELECTION's handles (touch-selection.ts): beside `#xterm`, never in it — the touch scroll, the
+   hold and xterm.js's mouse handling would take their drags. Each is placed at its END (the start: its first
+   cell's top-left; the end: its last cell's bottom-right) and draws a bar the cell's height with a knob — the
+   start's above, the end's below — inside a 44 px touch target centred on the knob. */
+.term-sel-handles { position: absolute; inset: 0; pointer-events: none; z-index: 4; }
+.term-sel-handle {
+  position: absolute; width: var(--touch); height: var(--touch); margin-left: calc(var(--touch) / -2);
+  pointer-events: auto; touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none;
+}
+.term-sel-start { margin-top: calc(var(--touch) / -2 - 6px); }
+.term-sel-end { margin-top: calc(var(--touch) / -2 + 6px); }
+.term-sel-handle::before, .term-sel-handle::after { content: ""; position: absolute; left: 50%; background: var(--accent); }
+.term-sel-handle::before { width: 2px; margin-left: -1px; height: var(--cell-h, 17px); }
+.term-sel-start::before { top: calc(50% + 6px); }
+.term-sel-end::before { bottom: calc(50% + 6px); }
+.term-sel-handle::after { width: 12px; height: 12px; margin: -6px 0 0 -6px; top: 50%; border-radius: 50%; }
+/* The empty terminal surface: the ways to get a shell, centred, over #xterm (which stays mounted and
+   fitted underneath). Nothing opens a shell by itself, so this is a real state — but only once the host's list
+   has said so (session.ts `termListed`): before it, this flashed on every connect. Until then the area stays plain. */
+#term-empty { position: absolute; inset: 0; z-index: 1; display: flex; gap: 12px; align-items: center;
+              justify-content: center; background: var(--term-bg); }
+/* THE SESSION'S LOADING SKELETON (session-skeleton.ts): placeholders where the tabs will be, from the session's mount
+   until the host's first list — asked for in place of the empty state the page flashed while connecting. The TERMINAL
+   AREA has none (asked the same day): it stays plain, and a tab's first content fades in as ever. Calm: a slow opacity
+   pulse, staggered; nothing moves. It comes in only after 150 ms, so a session whose list is there at once (This Mac)
+   never shows it. With motion reduced it is simply there, still, and gone. */
+.tab-skeleton {
+  order: -1; flex: none; display: flex; align-items: center; gap: 34px; padding: 3px 14px 0; pointer-events: none;
+  animation: skeleton-in calc(.2s * var(--motion-scale, 1)) ease-out calc(.15s * var(--motion-scale, 1)) backwards;
+}
+.tab-skeleton span {
+  display: block; flex: none; height: 9px; border-radius: 5px;
+  background: color-mix(in srgb, var(--text) 10%, transparent);
+  animation: skeleton-pulse calc(1.6s * var(--motion-scale, 1)) ease-in-out infinite;
+}
+.tab-skeleton span:nth-child(1) { width: 56px; }
+.tab-skeleton span:nth-child(2) { width: 44px; animation-delay: calc(-.2s * var(--motion-scale, 1)); }
+.tab-skeleton span:nth-child(3) { width: 76px; animation-delay: calc(-.4s * var(--motion-scale, 1)); }
+@keyframes skeleton-in { from { opacity: 0; } }
+@keyframes skeleton-pulse { 0%, 100% { opacity: .5; } 50% { opacity: 1; } }
+.rl-tab-kind { font: 500 10px var(--font-mono); color: var(--muted); }
+.palette-tmux-note { padding: 6px 12px; color: var(--muted); font-size: 12px; }
+#term-empty button { min-height: var(--touch); padding: 0 18px; border-radius: 10px; cursor: pointer;
+                     border: 1px solid var(--border); background: var(--surface2); color: var(--text);
+                     font: 500 14px var(--font-ui); }
+
+
+/* NO DOUBLE-TAP ZOOM ON A TOUCH DEVICE (viewport-fit.ts `blockPageZoom`). `manipulation`, never `none`: it keeps
+   panning, which an ancestor's touch-action would otherwise take from the terminal's native scroll (below). */
+@media (any-pointer: coarse) { html { touch-action: manipulation; } }
+
+/* Page scroll is already impossible in tabbed mode — ViewportFit pins <body> position:fixed +
+   overflow:hidden and html/body have overscroll-behavior:none — so we must NOT put touch-action:none
+   on <body>: on WebKit an ancestor's touch-action:none ALSO blocks the terminal's own native
+   touch-scroll (that was the "scrollback sometimes won't scroll" bug). We only contain the terminal's
+   and the picker menus' overscroll so a scroll-to-end doesn't chain into a page bounce. */
+:root[data-layout="tabbed"] .xterm-viewport,
+:root[data-layout="tabbed"] .sim-picker-menu,
+:root[data-layout="tabbed"] .picker-sublist { overscroll-behavior: contain; }
+
+/* The PINNED-LAYOUT family (tabbed + glasses): windows become full-bleed focus-switching surfaces,
+   no floating chrome. Keep this selector list in step with isPinnedLayout() in window-manager.ts —
+   if CSS pins a window that JS still sizes inline, the two fight and the window lands wrong.
+   Glasses needs EVERY rule in this family: on a 600x600 display the floating shell renders the
+   terminal surface and the windows layer AT ONCE, stacked. That is what shipped, and
+   e2e/glasses-layout-check.mjs is what caught it. */
+:root[data-layout="tabbed"] #windows,
+:root[data-layout="glasses"] #windows { position: absolute; inset: 0; z-index: 1; }
+/* Mobile is ALWAYS fitted to the screen: neutralize the desktop actual-size inline width/height so a
+   layout switch can't leave a stale desktop size pinned here (inline styles would otherwise win). */
+:root[data-layout="tabbed"] .source-window,
+:root[data-layout="glasses"] .source-window { width: auto !important; height: auto !important;
+  position: absolute !important; inset: 0 !important;
+  left: 0 !important; top: 0 !important; width: auto !important; height: auto !important;
+  border: 0; border-radius: 0; box-shadow: none; display: none; }
+:root[data-layout="tabbed"] .source-window.focused,
+:root[data-layout="glasses"] .source-window.focused { display: flex; }   /* only the focused source shows */
+/* The window's OWN titlebar is the mobile control surface (it replaced the tab bar's ⋯ popover): the
+   fps/res/rate selects and ✕, directly under the tab bar. Everything is sized for a finger — a --touch
+   row with --touch targets and 13px type — which is why the desktop 34px chrome is overridden here.
+
+   It is a SECOND ROW OF THE TAB BAR, not a panel of its own: same --tabbar fill, same --rail-x inset, no
+   rule of its own. It used to be a lighter #2a2a2a strip carrying a lighter-still .win-controls block,
+   which stacked three greys in ~110px of chrome and read as a strip floating on the bar above it.
+
+   SAFE vs the resize protocol: WIN_CHROME_PX only feeds windowElementSize/resizeRequest, and BOTH are
+   desktop-only (applySize returns early under data-layout="tabbed", and the grip is hidden below), so a
+   taller mobile bar cannot desync the host's request/confirm. */
+:root[data-layout="tabbed"] .win-resize { display: none; }   /* no resize on mobile — CSS pins the frame */
+:root[data-layout="tabbed"] .win-titlebar {
+  height: calc(var(--touch) + 8px); padding: 0 var(--rail-r) 0 var(--rail-l); gap: 8px;
+  cursor: default;   /* full-bleed: nothing to drag */
+  background: var(--tabbar); border-bottom: none;
+}
+/* The dot, name and per-window rate are all redundant on mobile — the window TAB directly above names the
+   window, and the footer already shows the incoming rate — and at 390px they crushed the title to a single
+   letter. Dropping them gives the controls room; `margin-left: auto` on − keeps the selects left and the
+   buttons right without a markup change. */
+:root[data-layout="tabbed"] .win-dot,
+:root[data-layout="tabbed"] .win-title,
+:root[data-layout="tabbed"] .win-rate { display: none; }
+/* The cluster's own fill + inset are desktop-only machinery (they let `pinControls` slide it over the
+   title on an oversized window). Mobile never shifts it — the window is pinned full-bleed — and both
+   would break the merged surface and the left rail, so they go. */
+:root[data-layout="tabbed"] .win-controls { flex: 1; background: none; padding-left: 0; }
+/* No − on mobile: parking a source is a desktop nicety, and ✕ (unsubscribe) is the one action needed here.
+   `margin-left: auto` moves to ✕ so it still sits right of the selects. */
+:root[data-layout="tabbed"] .win-minimize { display: none; }
+:root[data-layout="tabbed"] .win-fit { display: none; }   /* mobile already fits the focused window full-bleed */
+/* ...UNTIL THE PICTURE IS ZOOMED, which is when "mobile already fits it" stops being true. `Fit` is
+   the reset, and it appears exactly when there is something to undo — one control at rest, two while
+   zoomed, on a bar that is often only 390px wide. More specific than the rule above, which stays as
+   the default. */
+:root[data-layout="tabbed"] .source-window[data-zoomed="true"] .win-fit { display: inline-block; }
+/* WHILE ZOOM MODE IS ON, TAPS DO NOTHING ON THE MAC — correct, and indistinguishable from a dead
+   connection unless the mode is visible. The pressed button is one signal; this is the second, and it
+   is on the surface the finger is actually touching.
+
+   A PSEUDO-ELEMENT, NOT `box-shadow: inset`. An inset shadow paints above the element's own
+   background but BELOW its descendants, and `.win-body video` is `position: absolute; inset: 0` — so
+   the shadow was painted and then completely covered by the picture. MEASURED by eye against a real
+   Chromium at 420x800: the frame did not appear at all. An absolutely-positioned ::after shares the
+   video's `z-index: auto` and comes later in tree order, so it paints on top.
+
+   Out of flow and `pointer-events: none`, so it changes neither the body's box — which would move the
+   very picture it is drawn around — nor which element a finger lands on. */
+:root[data-layout="tabbed"] .source-window[data-view-mode="zoom"] .win-body::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  border: 2px solid var(--accent);
+}
+/* THE DROP MARK, WHERE AN OUTLINE CANNOT BE SEEN: a pinned window and a full-screen one fill their band
+   edge to edge, so the outline outside them (`.drop-target` above) is clipped away — by `#stage`, or by
+   the screen. There it is drawn INSIDE, over the picture, by the zoom mode's frame for the zoom mode's
+   reason: an inset shadow paints under the video. An iPad split beside Files is this layout. */
+:root[data-layout="tabbed"] .source-window.drop-target .win-body::after,
+:root[data-fullscreen] .source-window.fullscreen.drop-target .win-body::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  border: 2px solid var(--accent);
+}
+:root[data-layout="tabbed"] .win-titlebar select {
+  min-height: var(--touch); max-width: none; font-size: 13px; padding: 0 6px; border-radius: 10px;
+  border-color: var(--border2);
+}
+:root[data-layout="tabbed"] .win-rate { font-size: 11px; }
+/* Squared off on --rail-x at --touch, so it lands in the same column and at the same size as the tab
+   bar's `+` one row above. Bare where that one is bordered — the two are neighbours in a rail, and the
+   only thing telling a finger "add" from "close" is how they look. */
+:root[data-layout="tabbed"] .win-close {
+  margin-left: auto; width: var(--touch); height: var(--touch); font-size: 22px; border-radius: 10px;
+}
+:root[data-layout="tabbed"][data-tab="terminal"] #windows,
+:root[data-layout="glasses"][data-tab="terminal"] #windows { display: none; }   /* Terminal tab hides the sources */
+
+/* A WINDOW-LESS SESSION (docs/client-web.md): a connection with no media — the app's own Mac — renders
+   the terminal only. The window strip and the window surface go; `data-tab` stays `terminal`. */
+:root[data-windowless] #win-tabs,
+:root[data-windowless] #windows { display: none !important; }
+
+/* Which surface shows per tab: the Sim tab hides the terminal (the sources show via #windows above). */
+:root[data-layout="tabbed"][data-tab="sim"] #term-surface,
+:root[data-layout="glasses"][data-tab="sim"] #term-surface { display: none !important; }
+
+
+/* ===== Tabs (terminal + window, one visual language) ===============================================
+   Both strips live in #tabbar now, so #term-surface is back to a plain absolutely-positioned fill and
+   #xterm needs no flex override — the old `position: relative; flex: 1` rule existed only to make room
+   for the strip when it was a child of #term-surface. */
+/* ONE BAR (docs/superpowers/specs/2026-10-01-tab-menu-and-order-design.md): the two strips are
+   `display: contents`, so every tab is a flex item of `.tabbar-scroll` and terminal and window tabs
+   INTERLEAVE by `style.order` (session.ts `applyTabOrder`, from the host's `view-set.tabOrder`). The DOM
+   order is no longer the drawn order — anything that walks the tabs must read the bar's (`tabBarOrder`).
+   The `+` stays last. */
+.term-tabs, .win-tabs, .agent-tabs { display: contents; }
+.tab-add { order: 100000; }
+.rl-tab {
+  display: flex; align-items: center; gap: 10px; padding: 0 18px; margin: 11px 0;
+  border-radius: 10px; cursor: pointer; white-space: nowrap;
+  background: transparent; border: 1px solid var(--border); box-shadow: none;
+  font-family: var(--font-mono); font-size: 14px; font-weight: 500; color: var(--muted);
+}
+.rl-tab:hover { color: var(--text); }
+.rl-tab.on { background: var(--tab-on); box-shadow: var(--tab-shadow); color: var(--text); }
+/* A minimized tab deliberately gets NO styling of its own: it renders exactly like any DESELECTED tab.
+   It is a live, clickable way back to the source — dimming it read as "disabled", i.e. as something you
+   could not act on, which is the opposite of true. The `.minimized` class stays for behaviour (click
+   re-subscribes rather than focuses) and for tests. */
+/* Session tabs live inside a ShadowRoot: the document :root selection rule does not reach them.
+   Keep right-click/drag gestures from selecting titles, including in WKWebView. */
+.rl-tab, .rl-tab-label { user-select: none; -webkit-user-select: none; }
+.rl-tab-label { overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+/* Unread bell: a quiet silver underline, anchored to the title with no extra tab width. */
+.rl-tab-label { position: relative; }
+.rl-tab[data-bell] .rl-tab-label::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0;
+  height: 2px; border-radius: 2px; pointer-events: none;
+  background: #b8b8be;
+}
+.rl-tab-close {
+  order: 2; width: 24px; height: 24px; flex: none; display: flex; align-items: center; justify-content: center;
+  color: var(--faint); font-size: 16px; line-height: 1; margin: 0 -8px 0 0; border-radius: 6px;
+}
+.rl-tab-close:hover { color: var(--text); background: var(--surface3); }
+.tab-add {
+  align-self: center; margin-left: 4px; width: 38px; height: 38px; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  background: transparent; border: 1px dashed var(--border2); border-radius: 9px;
+  color: var(--muted); font-size: 19px; cursor: pointer;
+}
+.tab-add:hover { color: var(--text); border-color: var(--accent); }
+/* Empty sessions create their first tab from the empty-state actions. */
+#tabbar-scroll:not(:has(.rl-tab)) #tab-add { display: none; }
+/* An explicit height rather than the desktop's stretch-minus-margin: #tabbar's border-bottom eats into its
+   content box, so a stretched tab came out 43px against the palette button's 44 and the row read uneven. */
+:root[data-layout="tabbed"] .rl-tab {
+  padding: 0 14px; margin: 0; height: var(--touch); align-self: center; font-size: 13px;
+}
+:root[data-layout="tabbed"] .rl-tab-label { max-width: 120px; }
+
+/* ===== Arranging the bar (tab-bar.ts) ================================================================
+   A held finger must not raise iOS's callout over a tab — the hold is the menu's. */
+.rl-tab { -webkit-touch-callout: none; }
+/* The tab whose menu is open reads as pressed, so the menu says which tab it is about. */
+.rl-tab.menu-open { background: var(--surface3); color: var(--text); }
+/* A dragged tab rides above its neighbours, which step aside with the windows' own 140 ms. Reduced
+   motion settles the step (shell.css turns every transition off). */
+.tabbar-scroll.tab-dragging, .tabbar-scroll.tab-dragging .rl-tab { cursor: grabbing; }
+.rl-tab.dragging { position: relative; z-index: 2; background: var(--tab-on); color: var(--text);
+                   border-color: var(--border2); box-shadow: 0 4px 14px #0004; }
+.rl-tab.tab-shifting { transition: transform 140ms ease; }
+/* The rename alert (tab-bar.ts `renameUi`): a field the dialog's width, its placeholder the automatic name. */
+.tab-rename-dialog h2 { margin: 0 0 8px; font-size: 14px; }
+.tab-rename-dialog .tab-rename-input { display: block; width: 100%; margin: 0; }
+.tab-rename-dialog .tab-rename-input::placeholder { color: var(--faint); }
+/* 16px type stops iOS zooming the page into the field (terminal-copy.ts's field does the same). */
+@media (any-pointer: coarse) { .tab-rename-dialog .tab-rename-input { font-size: 16px; } }
+/* The menu: a POPOVER in the top layer, because the bar clips anything inside it. The UA's popover
+   centring is undone; tab-bar.ts places it under the tab or at the pointer. */
+.ctx-menu {
+  inset: auto; margin: 0; position: fixed; padding: 4px; min-width: 140px;
+  background: var(--surface2); color: var(--text);
+  border: 1px solid var(--border2); border-radius: 10px; box-shadow: 0 10px 30px #0005;
+  font-family: var(--font-ui);
+}
+.ctx-menu-item {
+  display: block; width: 100%; text-align: left; padding: 7px 12px; border: 0; border-radius: 7px;
+  background: transparent; color: inherit; font: 500 13px var(--font-ui); cursor: pointer;
+}
+.ctx-menu-item:hover, .ctx-menu-item:focus-visible { background: var(--surface3); }
+.ctx-menu-item:disabled { color: var(--faint); cursor: default; background: transparent; }
+@media (any-pointer: coarse) { .ctx-menu-item { min-height: var(--touch); font-size: 15px; } }
+
+/* Welcome overlay — pre-connect pairing-code entry (mountWelcome un-hides it when the URL lacks code/token). */
+.welcome-overlay {
+  position: fixed; inset: 0; z-index: 50;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--app-bg);
+}
+/* The identity panel is a `<dialog>` in the shared `.ss-dialog` design (`shell.css`), not a
+   bespoke overlay.
+
+   **THAT IS WHAT RETIRED A z-index.** It used to be a second `.welcome-overlay` at z-index 50,
+   FIRST in the document, so the dashboard painted over it and it opened invisible — fixed for a day
+   with `#e2e-setup { z-index: 60 }`. `showModal()` puts it in the TOP LAYER, which no stacking
+   context can reach above, and gives it a real `::backdrop`, focus containment and Esc for free.
+   The stacking assertion in `e2e/shellstorm-ui-check.mjs` stays: it now guards against anyone
+   turning it back into a div. */
+#e2e-setup[data-tone="warn"] h2 { color: var(--warn); }
+#e2e-setup[data-tone="ok"] h2 { color: var(--accent); }
+/* SELECTABLE and never truncated: §10.1 asks a person to compare this against another device, and
+   a name they cannot copy is not one they can check. */
+.e2e-setup-identity {
+  font-family: var(--font-mono); font-size: 11px; line-height: 1.5; word-break: break-all;
+  user-select: text; padding: 10px 12px; border: 1px solid var(--border);
+  border-radius: 9px; background: var(--surface2); color: var(--text);
+}
+/* Settings reuses the identity block; its actions are the shared dialog row. */
+.e2e-setup-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+
+/* Signing in, from the device list's empty state. `--touch` because this is the one control on the
+   dashboard a phone reaches with no pairing code in hand. */
+.device-list-action { min-height: var(--touch); padding: 0 18px; margin-top: 4px; cursor: pointer; }
+
+.welcome-card {
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+  width: 380px; max-width: 90vw; padding: 32px 36px;
+  font-family: var(--font-ui);
+}
+.welcome-card .brand { font-size: 22px; font-weight: 700; letter-spacing: 0.5px; font-family: var(--font-ui); }
+.welcome-hint { color: var(--muted); font-size: 13px; margin: 0; }
+/* The quick-connect field. `#welcome .ss-quick` overrides most of this further down — these are
+   the base for a field that is the PRIMARY control on a page whose list may be empty. */
+#home-input {
+  width: 100%; padding: 11px 13px; font-size: 15px; font-family: var(--font-mono); text-align: center;
+  color: var(--text); background: var(--surface2); border: 1px solid var(--border); border-radius: 9px;
+}
+/* No focus indication off the glass — shell.css. SCOPED to off the glass: an id selector outranks
+   the glasses ring (`[data-nav-id]:focus`, 0-4-0), so unscoped this left the dashboard's field the
+   one control a wearer could focus without seeing it (e2e/glasses-nav-check.mjs, dashboard arm). */
+:root:not([data-layout="glasses"]) #home-input:focus { outline: none; }
+#home-connect {
+  width: 100%; padding: 11px 22px; font-size: 15px; font-weight: 600; font-family: var(--font-ui);
+  color: var(--app-bg); background: var(--accent); border: none; border-radius: 9px; cursor: pointer;
+}
+#home-connect:hover { opacity: 0.9; }
+
+.source-state { margin-left: 0.4em; color: var(--muted); font-size: 0.8em; }
+/* ===== Command palette ============================================================================= */
+.palette-overlay {
+  position: fixed; inset: 0; z-index: 100; background: var(--scrim);
+  display: flex; justify-content: center; padding-top: 12vh;
+}
+.palette-overlay.hidden { display: none; }
+.palette-card {
+  width: 560px; max-width: 92vw; height: fit-content; max-height: 70vh;
+  display: flex; flex-direction: column; overflow: hidden;
+  background: var(--surface2); border: 1px solid var(--border2); border-radius: 14px;
+  box-shadow: var(--shadow);
+}
+.palette-head { display: flex; align-items: center; gap: 11px; padding: 15px 17px; border-bottom: 1px solid var(--border); }
+.palette-icon { color: var(--faint); font-size: 17px; }
+#palette-input {
+  flex: 1; min-width: 0; background: transparent; border: none; outline: none;
+  color: var(--text); font-size: 16px; font-family: var(--font-ui);
+}
+#palette-input::placeholder { color: var(--faint); }
+.palette-head kbd {
+  font-family: var(--font-mono); font-size: 10px; padding: 3px 6px;
+  background: var(--surface3); border: 1px solid var(--border); border-radius: 4px; color: var(--faint);
+}
+.palette-body { overflow-y: auto; padding: 7px; min-height: 0; }
+.palette-actions:not(:empty) { border-bottom: 1px solid var(--border); margin-bottom: 7px; padding-bottom: 7px; }
+#palette-close {
+  flex: none; width: 26px; height: 26px; align-items: center; justify-content: center;
+  background: transparent; border: none; border-radius: 6px; color: var(--muted); cursor: pointer;
+  font-size: 14px; line-height: 1;
+  display: none;   /* mobile-only — desktop dismisses with esc / click-outside */
+}
+#palette-close:hover { background: var(--surface3); color: var(--text); }
+
+/* The window-preview grid. LOAD-BEARING: the explicit grid-auto-rows + flex-shrink. The nested
+   flex-card -> grid -> flex-tile otherwise shrinks the grid's auto-rows to the caption (image box 0), and
+   `overflow: hidden` clips every snapshot to nothing — which looks exactly like "thumbnails never arrive"
+   while capture and delivery are fine. Do not "simplify" these away. */
+.palette-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-auto-rows: 152px; gap: 7px; min-height: 0; }
+.source-tile { border: 2px solid transparent; border-radius: 10px; overflow: hidden; cursor: pointer;
+  background: var(--surface); display: flex; flex-direction: column; padding: 0; text-align: left;
+  font-family: var(--font-ui); }
+.source-tile.subscribed { border-color: var(--border2); }
+.source-tile.focused { box-shadow: var(--glow) inset; }
+.source-tile.on { border-color: var(--accent); }   /* keyboard selection */
+
+/* THE DESKTOP IS A DIFFERENT KIND OF THING FROM A WINDOW, and it sorts first. A left rule in the accent
+   colour says so without a glyph — see source-picker.ts for why not a glyph: the existing ▢/▣ badges are
+   already outside the self-hosted JetBrains Mono subsets and fall back to a system font at unpredictable
+   ink, so a third would deepen a trap rather than follow a pattern.
+   The rule sits INSIDE the tile's existing 2px border box, so it cannot shift the grid's layout. */
+.source-tile[data-kind="display"] .source-tile-img { border-left: 3px solid var(--accent); }
+/* DEFINITE height + flex-shrink:0, not `flex: 1 1 auto`. The image box must reserve exactly its own space
+   so the caption always has room: with a flexible box a tall snapshot grows past the row and the tile's
+   `overflow: hidden` eats the caption (seen live — the first two tiles rendered captionless). */
+.source-tile-img { height: 120px; flex-shrink: 0; background: var(--ph); display: flex;
+  align-items: center; justify-content: center; color: var(--faint); font-size: 1.6em; overflow: hidden; }
+.source-tile-img img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+.source-tile-img.loading::after { content: "…"; }
+.source-tile-cap { display: flex; align-items: center; gap: 0.4em; padding: 0.45em 0.55em; flex: none;
+  font-family: var(--font-mono); font-size: 11px; color: var(--text); }
+.source-tile-cap .sim-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--faint); }
+.source-tile-cap .sim-dot.running { background: var(--accent); }
+.source-tile-cap .sim-check { margin-left: auto; color: var(--accent-text); }
+.source-tile-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.source-tile-state { margin-left: auto; color: var(--muted); font-size: 0.9em; flex: none; }
+/* ===== Command palette — mobile sheet ==============================================================
+   Full-bleed, not a floating modal: no scrim gutter, no radius, no shadow, and no entry animation.
+
+   `inset: 0` is the VISIBLE band, not the layout viewport: ViewportFit transforms <body>, and a transformed
+   ancestor becomes the containing block for `position: fixed` descendants — so with the soft keyboard open
+   the sheet ends exactly where the keyboard starts, and the grid scrolls inside what is left. That is why
+   this needs no keyboard-specific handling of its own.
+
+   The `esc` chip is meaningless without a hardware keyboard, so it swaps for a ✕ — which is also the ONLY
+   way out here, since a full-bleed sheet leaves no overlay to tap. */
+:root[data-layout="tabbed"] .palette-overlay { padding: 0; background: var(--app-bg); }
+:root[data-layout="tabbed"] .palette-card {
+  width: 100%; max-width: none; height: 100%; max-height: none;
+  border: none; border-radius: 0; box-shadow: none;
+  animation: none;   /* explicit: also cancels the desktop rl-pop, so the sheet just appears */
+}
+/* The head takes the tab bar's exact height and rail, so the ✕ sits precisely where the `+` that opened
+   the sheet was: on a phone the sheet covers the bar, and open/close then happen under the same thumb. */
+:root[data-layout="tabbed"] .palette-head {
+  height: var(--tabbar-h); flex: none; padding: 0 var(--rail-r) 0 var(--rail-l); gap: 12px;
+}
+:root[data-layout="tabbed"] .palette-head kbd { display: none; }
+/* Bigger touch target than the desktop 26px, and the same square, glyph and size as the `+` it lands on
+   top of — the sheet covers the tab bar, so anything else reads as the button changing size mid-tap. */
+:root[data-layout="tabbed"] #palette-close {
+  display: flex; width: var(--touch); height: var(--touch); font-size: 22px; border-radius: 10px;
+}
+/* `contain` so a flick past the end of the grid can't chain into a page bounce behind the sheet. */
+:root[data-layout="tabbed"] .palette-body {
+  padding: 10px var(--rail-r) 10px var(--rail-l); overscroll-behavior: contain;   /* tiles on the same rail as the head above */
+  padding-bottom: calc(10px + var(--safe-b));    /* clear of the home indicator, but not of the keyboard */
+}
+/* Two comfortable columns on a phone rather than the desktop's denser grid. */
+:root[data-layout="tabbed"] .palette-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-auto-rows: 150px; gap: 10px; }
+:root[data-layout="tabbed"] .source-tile-img { height: 118px; }
+:root[data-layout="tabbed"] .source-tile-cap { font-size: 12px; padding: 0.5em 0.6em; }
+:root[data-layout="tabbed"] .pal-row { padding: 14px 12px; }
+.pal-row {
+  display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 11px;
+  background: transparent; border: none; border-radius: 9px; text-align: left; cursor: pointer;
+  font-family: var(--font-ui);
+}
+.pal-row.on, .pal-row:hover { background: var(--surface3); }
+.pal-glyph {
+  width: 26px; height: 26px; flex: none; display: flex; align-items: center; justify-content: center;
+  background: var(--accent-dim); color: var(--accent-text); border-radius: 7px;
+  font-family: var(--font-mono); font-size: 12px; font-weight: 700;
+}
+.pal-mid { flex: 1; min-width: 0; }
+.pal-label { display: block; font-size: 14px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pal-hint { display: block; font-size: 12px; color: var(--muted); font-family: var(--font-mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pal-kind { font-size: 10px; color: var(--faint); letter-spacing: .06em; text-transform: uppercase; flex: none; }
+.palette-empty { padding: 22px; text-align: center; color: var(--faint); font-size: 13px; font-family: var(--font-ui); }
+.palette-empty.hidden { display: none; }
+
+/* Account panel inside the welcome overlay. The pairing input stays the primary control; this is
+   an alternative route in, never a replacement. */
+.welcome-or { margin: 14px 0 10px; opacity: 0.55; font-size: 13px; text-align: center; }
+.welcome-signin { width: 100%; padding: 10px 14px; cursor: pointer; }
+/* The code is read ACROSS A ROOM, so it is sized for distance, not for the card. Wide tracking is
+   what separates the two groups without a second element; JetBrains Mono is already self-hosted and
+   its latin subset covers A-Z. */
+.device-code {
+  font-family: var(--font-mono); font-size: 34px; font-weight: 700;
+  letter-spacing: 0.16em; text-align: center; margin: 6px 0 2px;
+  user-select: text;                      /* the ONE place a code may be copied rather than typed */
+}
+.device-link-where { font-family: var(--font-mono); font-size: 14px; opacity: 0.85; margin: 0; text-align: center; }
+
+/* Two identities, stacked so the codes share a left edge — a comparison is only as good as the
+   alignment it is read at. `user-select: text` for the same reason `.device-code` has it: §10.1 asks
+   a person to check an identity against another device, and a code they cannot select is not one
+   they can check. */
+.identity-compare { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 14px 0 4px; align-items: baseline; }
+.identity-compare dt { font-size: 13px; color: var(--muted); }
+.identity-compare dd { margin: 0; }
+.identity-compare-code {
+  font-family: var(--font-mono); font-size: 15px; letter-spacing: 0.06em; color: var(--text);
+  user-select: text; -webkit-user-select: text;
+}
+.link-consent { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+.link-consent-warn { font-size: 13px; opacity: 0.8; margin: 0; }
+.link-consent-actions { display: flex; gap: 10px; }
+.link-consent-actions button { flex: 1; padding: 10px 14px; cursor: pointer; }
+
+/* ── On-screen key strip ─────────────────────────────────────────────────────────────────────────
+   A touch device has no Esc, Tab, Ctrl, Option, Command or arrows. Gated on `(any-pointer: coarse)`,
+   NOT on the layout: an iPad in LANDSCAPE is 1024pt wide, so it resolves to `floating` and would
+   never match a layout gate — exactly how the Touch-mode row shipped broken. `any-pointer`, not
+   `pointer`: a touchscreen laptop's PRIMARY pointer reads `fine` and the user can still put a finger
+   on the glass. A mouse-only Mac sees nothing, deliberately.
+
+   Glasses are excluded EXPLICITLY rather than by relying on the media query, whose value on that
+   WebView is unmeasured — and there the D-pad IS the keyboard, so a strip forwarding keys to the Mac
+   would hand the wearer's only input device away irrecoverably. */
+:root { --keystrip-row: calc(var(--touch) + 8px); --keystrip-h: var(--keystrip-row); }
+:root[data-keystrip="expanded"] { --keystrip-h: calc(var(--keystrip-row) * 2); }
+
+.key-strip { display: none; }
+
+@media (any-pointer: coarse) {
+  :root:not([data-layout="glasses"]) .key-strip {
+    display: flex; flex-wrap: wrap; align-items: stretch; overflow: hidden;
+    background: var(--tabbar);
+    /* An INSET SHADOW, not `border-top`. A border adds 1px to the box, so the strip measured 53px
+       against the 52px `#xterm` reserves and the grid's last row sat under the separator. A shadow
+       paints the same hairline and costs no layout, which is what keeps `--keystrip-h` an EXACT
+       agreement between the two rather than an off-by-one nobody would ever see in a screenshot. */
+    box-shadow: inset 0 1px 0 var(--border);
+    /* COLUMN gap only. `gap` in a WRAPPING flex container also spaces the rows, so the expanded
+       strip measured 110px (52 + 6 + 52) against the 104px `--keystrip-h` reserves — the two rows
+       must stack flush for the single-variable agreement to hold. */
+    padding: 0 var(--rail-r) 0 var(--rail-l); column-gap: 6px; row-gap: 0;
+  }
+  /* The scroller is CLIPPED where the fixed group begins rather than sliding under it — the same
+     structure #tabbar uses, and strictly stronger than `position: sticky`: the fixed controls are
+     OUTSIDE the scrolling box, so they cannot scroll out of reach at any width. */
+  :root:not([data-layout="glasses"]) .key-strip-scroll {
+    flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px;
+    height: var(--keystrip-row);
+    overflow-x: auto; overscroll-behavior: contain;
+  }
+  :root:not([data-layout="glasses"]) .key-strip-fixed {
+    flex: none; display: flex; align-items: center; gap: 6px; height: var(--keystrip-row);
+  }
+  /* Prepended, so it takes the FIRST row and --keystrip-h doubles to match. */
+  :root:not([data-layout="glasses"]) .key-strip-more {
+    flex-basis: 100%; display: flex; align-items: center; gap: 6px;
+    height: var(--keystrip-row); overflow-x: auto; overscroll-behavior: contain;
+  }
+  :root:not([data-layout="glasses"]) .key-cap {
+    flex: none; min-width: var(--touch); height: var(--touch); padding: 0 8px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--surface2); color: var(--text);
+    border: 1px solid var(--border); border-radius: 10px;
+    font: inherit; font-family: var(--font-ui); font-size: 13px; line-height: 1;
+    cursor: pointer; user-select: none; -webkit-user-select: none;
+    /* A key must not raise the browser's callout or start a selection on hold — the hold is repeat. */
+    -webkit-touch-callout: none; touch-action: manipulation;
+  }
+  /* A HELD modifier is filled, not tinted: it is down right now, under a finger, and the feedback has
+     to read at a glance from the corner of the eye while the other hand types. Amber is the same
+     "this is on and you should know it" language .win-codec[data-unmet] uses. */
+  :root:not([data-layout="glasses"]) .key-mod[data-state="held"] {
+    background: #d98a1f; border-color: #d98a1f; color: var(--bg);
+  }
+
+  /* The terminal grid stops exactly where the strip starts. ONE variable drives both, so they cannot
+     drift — and it follows data-keystrip, so expanding the second row shrinks the grid with it.
+     `inset` ONLY: #xterm's padding is the terminal inset FitAddon's measurement (of `.xterm-inst`,
+     inside #xterm's content box) excludes, and it must not be touched here. */
+  :root:not([data-layout="glasses"]) #xterm { inset: 0 0 var(--keystrip-h) 0; }
+  :root:not([data-layout="glasses"]) #key-strip-term {
+    position: absolute; left: 0; right: 0; bottom: 0;
+  }
+
+  /* Pinned to the bottom of the window and OUT OF FLOW. A third flex child would change .win-body's
+     height, and WIN_CHROME_PX feeds the host resize request/confirm protocol — out of flow means
+     windowElementSize and resizeRequest need no changes at all. Accepted cost: it overlays the
+     bottom of the picture. z-index 3 is above the video and the trackpad cursor (2), and below
+     .win-settings, which covers its own window at inset 0. */
+  :root:not([data-layout="glasses"]) .source-window > .key-strip {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 3;
+    height: var(--keystrip-h);
+  }
+}
+
+/* The keystroke tap for a projected window. Visually hidden but FOCUSABLE and non-zero-sized:
+   `display:none`, `visibility:hidden` and a 0x0 box all stop iOS raising the keyboard for it. Not
+   inside the media query — a hardware keyboard on an iPad reaches it too. */
+.win-key-input {
+  position: absolute; bottom: 0; left: 0; width: 1px; height: 1px;
+  opacity: 0; border: 0; padding: 0; margin: 0; z-index: 4;
+  background: transparent; color: transparent; caret-color: transparent;
+}
+
+/* ── Meta Display glasses ────────────────────────────────────────────────────────────────────────
+   600x600dp additive waveguide: light ADDS to the real world, so #000 emits nothing and is fully
+   TRANSPARENT. That is exactly what the page background wants — and exactly what a card must never
+   use, or it is invisible. Focus is the entire interaction model here (no cursor, no pointer), so
+   the focus state is load-bearing UI rather than decoration.
+   Everything is gated on :root[data-layout="glasses"]; floating and tabbed are untouched. */
+:root[data-layout="glasses"] {
+  --glass-surface: #0a0a0f;
+  --glass-edge: #2a2a33;
+  --glass-text: #ffffff;
+  --glass-rail: 8px;      /* safe margin: edge elements are clipped by rubberbanding */
+  /* Control height. The display guidelines' 88dp figure is a TAP target, and these glasses have no
+     touchscreen at all — a control is reached by moving focus and fired by a pinch, so its size has
+     no bearing on activation accuracy, only on legibility. 88dp of chrome per control is pure waste
+     on a 600px-tall display: the strip alone cost 105px. Type stays at/above the 14dp floor, which
+     is the guideline that does apply. */
+  --glass-chip: 48px;
+  --glass-strip-h: 62px;  /* chip + 2x6px padding + 1px border — #xterm reserves exactly this */
+}
+
+:root[data-layout="glasses"] body {
+  width: 600px;
+  height: 600px;
+  overflow: hidden;
+  background: #000000;
+  color: var(--glass-text);
+}
+
+:root[data-layout="glasses"] #tabbar,
+:root[data-layout="glasses"] #stage,
+:root[data-layout="glasses"] #statusbar {
+  padding-inline: var(--glass-rail);
+  background: var(--glass-surface);
+}
+
+/* The compose bar is plain markup on every layout; only this reveals it. */
+:root:not([data-layout="glasses"]) #glasses-compose-bar { display: none; }
+/* #term-surface is `position: absolute; inset: 0`, and #xterm is absolute inside it, so a
+   normal-flow compose bar lands wherever the canvas happens to end — measured at y=214, floating in
+   the middle of the screen. Pin it to the bottom and reserve its height off the grid above. */
+:root[data-layout="glasses"] #glasses-compose-bar {
+  display: flex;
+  gap: 8px;
+  padding: var(--glass-rail);
+  align-items: center;
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: var(--glass-strip-h);
+  background: var(--glass-surface);
+  border-top: 1px solid var(--glass-edge);
+}
+/* The grid stops exactly where the strip starts — one variable drives both, so they cannot drift. */
+:root[data-layout="glasses"] #xterm {
+  inset: 0 0 var(--glass-strip-h) 0;
+  padding: var(--glass-rail);
+}
+/* `display: contents` so the nine chips and the compose field are all SIBLINGS in the strip's flex
+   row and each takes one equal share. As a flex ITEM this wrapper was one child beside the input, so
+   `flex: 1` on each gave the input half the row and the nine chips a ninth of the rest — measured at
+   291px against 26px. */
+:root[data-layout="glasses"] #glasses-chips { display: contents; }
+/* Every control in the strip is one equal share of the row — the compose field included. It stays a
+   real <input> because only a text control opens the on-glasses composer, but it reads as one more
+   button, which is what a full-width "Tap to write or speak" field was not. */
+:root[data-layout="glasses"] #glasses-compose,
+:root[data-layout="glasses"] #glasses-chips button {
+  flex: 1;
+  min-width: 0;                    /* a flex item's default min-width:auto would overflow 600px */
+  height: var(--glass-chip);
+  min-height: 0;
+  padding: 0 2px;
+  font-size: 15px;
+  text-align: center;
+  text-overflow: ellipsis;
+}
+
+/* Every focusable control. No blanket height: a tab bar is 64px tall and an 88px control inside it
+   simply overflows. Height is set per context (the strip below); this rule is appearance + focus. */
+:root[data-layout="glasses"] [data-nav-id] {
+  font-size: 15px;
+  background: var(--glass-surface);
+  color: var(--glass-text);
+  border: 1px solid var(--glass-edge);
+  opacity: 0.8;
+  transition:
+    transform 625ms cubic-bezier(0.24, 0.24, 0.6, 1),
+    opacity 400ms cubic-bezier(0.2, 0.24, 0.9, 1);
+}
+
+/* Only the CONTAINER scales — content stays 1x so it stays legible. The outline is not redundant
+   with the scale: colour is never the sole indicator of meaning, and a scale alone is easy to miss
+   on a see-through display.
+
+   **THE ONE FOCUS RING LEFT IN THE PRODUCT.** Everything off the glass had its focus indication
+   removed on 2026-09-14 (`shell.css`); this survives because the glasses have no pointer, so focus
+   IS the selection model — a D-pad moves it, a pinch fires it, and a wearer who cannot see where it
+   is cannot use the product. `e2e/glasses-layout-check.mjs` asserts the asymmetry in both
+   directions. **Specificity is what protects this**, not the check: a blanket `:focus { outline:
+   none }` elsewhere loses to `:root[data-layout="glasses"] [data-nav-id]:focus` and leaves the ring
+   alone (measured). What would take it is `!important`, or an edit to this rule — which is what the
+   check actually catches. */
+:root[data-layout="glasses"] [data-nav-id]:focus,
+:root[data-layout="glasses"] [data-nav-id]:focus-within {
+  transform: scale(calc(1 - 8 / 88));
+  opacity: 1;
+  outline: 2px solid var(--glass-text);
+  outline-offset: 2px;
+  transition:
+    transform 475ms cubic-bezier(0.6, 0, 0.4, 1),
+    opacity 300ms cubic-bezier(0.4, 0.04, 0.5, 1);
+}
+
+/* LOAD-BEARING — the palette close button MUST be visible on glasses.
+   It is display:none by default ("mobile-only — desktop dismisses with esc / click-outside"), and a
+   wearer has NEITHER: there is no Esc key on a D-pad and no pointer to click outside with. Without
+   this the palette is a room with no door — you can open it and never leave. Caught by
+   e2e/glasses-nav-check.mjs, whose focus-trap sweep never reached the button. */
+:root[data-layout="glasses"] #palette-close {
+  display: flex;
+  width: var(--glass-chip);
+  height: var(--glass-chip);
+  font-size: 22px;
+  border-radius: 10px;
+}
+
+/* ── Glasses: the palette is a full-bleed sheet ──────────────────────────────────────────────────
+   Same shape as the phone sheet and for a stronger reason: there is no pointer at all, so
+   click-outside does not exist and the ✕ is the ONLY way out (it is also in the D-pad order).
+   Every row and tile is a real <button> carrying a data-nav-id, so focus is the selection model
+   here — which is why the palette's own `.on` highlight is suppressed below: two competing
+   indicators on one surface reads as a bug, and only one of them tracks what a pinch will fire. */
+:root[data-layout="glasses"] .palette-overlay { padding: 0; background: var(--app-bg); }
+:root[data-layout="glasses"] .palette-card {
+  width: 100%; max-width: none; height: 100%; max-height: none;
+  border: none; border-radius: 0; box-shadow: none;
+  animation: none;
+}
+:root[data-layout="glasses"] .palette-head {
+  height: var(--tabbar-h); flex: none; padding: 0 var(--glass-rail); gap: 10px;
+}
+:root[data-layout="glasses"] .palette-head kbd { display: none; }
+:root[data-layout="glasses"] .palette-body {
+  padding: var(--glass-rail); overscroll-behavior: contain;
+}
+/* Two columns at 600px, sized so a caption stays readable at the 14dp floor. */
+:root[data-layout="glasses"] .palette-grid {
+  grid-template-columns: repeat(2, 1fr); grid-auto-rows: 140px; gap: 8px;
+}
+:root[data-layout="glasses"] .source-tile-img { height: 104px; }
+:root[data-layout="glasses"] .source-tile-cap { font-size: 14px; padding: 0.4em 0.5em; }
+:root[data-layout="glasses"] .pal-row { padding: 12px; }
+/* Focus is the one indicator. See the note above. */
+:root[data-layout="glasses"] .pal-row.on,
+:root[data-layout="glasses"] .source-tile.on { outline: none; }
+/* The query field is a control like any other here, not the full-width bar it is on desktop. */
+:root[data-layout="glasses"] #palette-input { font-size: 15px; min-width: 0; }
+
+/* Scrim on the palette's scrolling body: the display guidelines require one on any scrolling
+   container, and it is the only signal a wearer gets that the grid continues past the fold. Sized MD
+   (64dp). `pointer-events: none` so it cannot eat a pinch, and it is painted from the surface colour
+   rather than #000, which emits no light on this display and so would fade to nothing. */
+:root[data-layout="glasses"] .palette-body { position: relative; }
+:root[data-layout="glasses"] .palette-body::after {
+  content: "";
+  position: sticky; display: block;
+  bottom: 0; left: 0; right: 0; height: 64px;
+  margin-top: -64px;
+  background: linear-gradient(to top, var(--glass-surface) 0%, transparent 100%);
+  pointer-events: none;
+}
+
+/* ── Per-window settings panel ──────────────────────────────────────────────────────────────────
+   The titlebar strip carried six controls and stopped fitting: a window is often 280px wide, and
+   `pinControls` could only slide the cluster back into view, not make it narrower than its titlebar.
+   The controls moved behind a gear; the titlebar keeps title + Settings + Fit/−/×.
+
+   THE PANEL COVERS ITS OWN WINDOW — a child of `.source-window` at `inset: 0`. An earlier version
+   was a floating popover in a sibling layer, placed below the titlebar and flipped above the window
+   when the viewport had no room. It was wrong twice over: it opened BEHIND the window, because
+   windows carry an INLINE z-index (5 focused, 3 unfocused, set in window-manager) that a sibling
+   layer's static z-index could not reliably beat; and the flip-and-clamp read as the menu evading
+   the screen edge. Living inside the window fixes both by construction — it stacks in that window's
+   own context, moves with it, and `overflow: hidden` clips it to the same 15px corners. */
+.win-gear { font-size: 10px; padding: 1px 5px; flex: none; font-family: var(--font-ui);
+  background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 3px;
+  line-height: 1.6; cursor: pointer; }
+.win-gear:hover { border-color: var(--border2); }
+.win-gear[aria-expanded="true"] { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+/* A REFUSED PIN, VISIBLE WITHOUT OPENING ANYTHING. The controls moved behind this button, and with
+   them the amber `data-unmet` that is the only thing distinguishing "the host is doing what you
+   asked" from "the browser refused and rdev fell back". Same amber as `.win-codec[data-unmet]`, and
+   the same reasoning: the connection is working, it is just not working the way the user asked. */
+.win-gear[data-unmet] { color: #d98a1f; border-color: #d98a1f; }
+.win-gear[data-unmet][aria-expanded="true"] { color: var(--bg); border-color: var(--accent); }
+/* z-index 3 sits above `.win-controls` (1) and the body, inside the window's own stacking context —
+   it does not compete with the inline z-index the window itself carries. OPAQUE because it covers
+   live video: a translucent fill leaves moving picture behind the labels and is unreadable. */
+.win-settings { display: none; position: absolute; inset: 0; z-index: 3;
+  background: var(--surface2); padding: 10px; overflow-y: auto; }
+.win-settings.open { display: block; }
+.win-settings-head { display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px; }
+.win-settings-title { font-size: 11px; color: var(--muted); font-family: var(--font-ui);
+  text-transform: uppercase; letter-spacing: 0.08em; }
+/* ALWAYS VISIBLE, NEVER LAYOUT-GATED. Desktop dismisses with esc or a click outside; glasses have
+   neither — no Esc on a D-pad, no pointer to click outside with. `#palette-close` was once broken
+   exactly this way, and the rule generalises: a control gated to one layout is a trap. */
+.win-settings-close { width: 22px; height: 22px; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  background: transparent; border: none; border-radius: 5px;
+  color: var(--muted); font-size: 14px; line-height: 1; cursor: pointer; }
+.win-settings-close:hover { background: var(--surface3); color: var(--text); }
+.win-settings-row { display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; padding: 5px 0; }
+.win-settings-label { font-size: 11px; color: var(--text); font-family: var(--font-ui); }
+/* The scope is written beside the control, not only in its tooltip: a session-wide setting rendered
+   identically to a per-window one is how someone comes to believe it applies to this window only. */
+.win-settings-row.scope-wide .win-settings-label { color: var(--muted); }
+/* A row scoped to particular layouts AND to a touch device. THIS RULE IS THE ONLY THING HIDING IT,
+   so `visibleSettingsRows` — which feeds the glasses D-pad order — must agree with the layout half,
+   or the nav walks onto an invisible control. `.win-settings-row` is `display: flex`, so that is
+   what the shown state restores.
+
+   `any-pointer`, NOT `pointer`. `pointer: coarse` asks about the PRIMARY input, which reads `fine`
+   on an iPad with a trackpad keyboard and on a touchscreen laptop — both devices whose user can
+   still put a finger on the glass. `any-pointer: coarse` asks the question this control actually
+   depends on: is there a finger at all.
+
+   An unset `data-layout` (before watchLayoutMode's first callback) matches neither selector and the
+   row stays hidden, which is the safe direction. */
+.win-settings-row[data-layouts] { display: none; }
+@media (any-pointer: coarse) {
+  :root[data-layout="tabbed"] .win-settings-row[data-layouts~="tabbed"],
+  :root[data-layout="floating"] .win-settings-row[data-layouts~="floating"] { display: flex; }
+}
+/* The 42px titlebar cap does not reach here — that rule is scoped to `.win-titlebar select` — but
+   `.win-codec`'s own 78px does, so both are widened for a panel that has the room. */
+.win-settings select { font-size: 11px; padding: 2px 4px; max-width: none; min-width: 96px;
+  background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 3px; }
+.win-settings .win-rate { font-size: 11px; }
+
+/* Mobile and glasses: the window already fills the stage on those layouts, so `inset: 0` is full
+   bleed with no override needed. Only the control scale changes — `--touch` on mobile, and the
+   `--rail-x` column the tab bar and titlebar already share. */
+:root[data-layout="tabbed"] .win-settings,
+:root[data-layout="glasses"] .win-settings { padding: 0 var(--rail-r) var(--rail-x) var(--rail-l); }
+:root[data-layout="tabbed"] .win-settings-head,
+:root[data-layout="glasses"] .win-settings-head {
+  height: var(--tabbar-h); margin: 0 calc(var(--rail-r) * -1) 4px calc(var(--rail-l) * -1);
+  padding: 0 var(--rail-r) 0 var(--rail-l); }
+:root[data-layout="tabbed"] .win-settings-close,
+:root[data-layout="glasses"] .win-settings-close { width: var(--touch); height: var(--touch); font-size: 20px; }
+:root[data-layout="tabbed"] .win-settings-row { padding: 10px 0; }
+:root[data-layout="tabbed"] .win-settings select { font-size: 15px; min-height: var(--touch); }
+
+/* Glasses: 48px controls and 15px type. NOT the guidelines' 88dp — that figure is a TAP target and
+   these glasses have no touchscreen, so a control is reached by moving focus and fired by a pinch.
+   Its size governs legibility, not accuracy, and a blanket 88 would overflow the 64px tab bar.
+   #000000 is TRANSPARENT on an additive display, so the fill is #0a0a0f. */
+:root[data-layout="glasses"] .win-settings-row { padding: 6px 0; }
+:root[data-layout="glasses"] .win-settings select,
+:root[data-layout="glasses"] .win-settings-close { min-height: 48px; font-size: 15px; }
+:root[data-layout="glasses"] .win-settings-label { font-size: 15px; }
+:root[data-layout="glasses"] .win-settings { background: #0a0a0f; }
+
+/* ── Glasses: the option chooser for a session <select> (`glasses-chooser.ts`) ──────────────────
+   A pinch opens no native picker, and stepping a HOST setting per pinch would apply every value on
+   the way (a codec step renegotiates), so a pinch on a gear-panel select opens this full-bleed list
+   instead. Body-level and fixed, above the palette (100). Only ever built on the glasses layout, but
+   gated anyway so a stray one can never paint on another. The fill is the glass surface, never
+   #000000 — that is TRANSPARENT on an additive display. Focus is the selection; the CURRENT value is
+   marked by an accent edge plus a WORD, never colour alone. */
+.glasses-chooser { display: none; }
+:root[data-layout="glasses"] .glasses-chooser {
+  position: fixed; inset: 0; z-index: 110;
+  display: flex; flex-direction: column;
+  background: var(--glass-surface); color: var(--glass-text);
+  padding: 0 var(--glass-rail) var(--glass-rail);
+}
+:root[data-layout="glasses"] .glasses-chooser-head {
+  height: var(--tabbar-h); flex: none; display: flex; align-items: center;
+  padding: 0 var(--glass-rail); border-bottom: 1px solid var(--glass-edge); margin-bottom: 8px;
+}
+:root[data-layout="glasses"] .glasses-chooser-title { font-size: 17px; font-weight: 600; }
+:root[data-layout="glasses"] .glasses-chooser-list {
+  flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+  display: flex; flex-direction: column; gap: 6px; padding: 6px var(--glass-rail);
+}
+:root[data-layout="glasses"] .glasses-chooser-option,
+:root[data-layout="glasses"] .glasses-chooser-cancel {
+  flex: none; min-height: var(--glass-chip); padding: 0 14px; border-radius: 10px;
+  text-align: left; font: 15px var(--font-ui); cursor: default;
+}
+:root[data-layout="glasses"] .glasses-chooser-option[data-current="true"] {
+  border-color: var(--accent); border-left-width: 4px;
+}
+:root[data-layout="glasses"] .glasses-chooser-option[data-current="true"]::after {
+  content: "current"; float: right; color: var(--accent); font-size: 13px;
+}
+:root[data-layout="glasses"] .glasses-chooser-cancel { margin: 8px var(--glass-rail) 0; text-align: center; }
+
+/* Why the palette cannot show a grid (host display asleep / absent), or why the grid it does show
+   cannot be typed into (session locked). Warn-toned rather than error-toned: nothing is broken in
+   rdev, the host is simply not in a state macOS can capture or drive. */
+.palette-notice { display: grid; gap: 4px; padding: 12px 14px; margin-bottom: 10px;
+                  border-radius: 8px;
+                  background: color-mix(in srgb, var(--warn) 12%, transparent);
+                  border: 1px solid color-mix(in srgb, var(--warn) 40%, transparent); }
+.palette-notice strong { color: var(--warn); font-size: 13px; font-weight: 600; }
+.palette-notice span { color: var(--muted); font-size: 12px; line-height: 1.45; }
+
+/* Xpromptvs session chrome. The 64/38 bands, 34px floating titlebar, touch rail,
+   key strips and video rectangles remain the geometry contract above. */
+#statusbar { background: var(--tabbar); font-family: var(--font-ui); }
+.rl-tab { background: var(--surface); font-family: var(--font-ui); border-radius: 8px; gap: 10px; }
+.rl-tab.on { border-color: var(--border2); }
+.rl-tab:hover { background: var(--surface3); }
+.rl-tab-close:hover { background: transparent; }
+.tab-add { border-style: solid; border-radius: 7px; }
+.palette-open { border-color: var(--border2); border-radius: 7px; background: transparent; }
+.palette-open kbd, .palette-head kbd { font-family: var(--font-ui); }
+.win-title { font-family: var(--font-ui); }
+.source-window { border-radius: 12px; }
+:root[data-layout="tabbed"] .source-window, :root[data-layout="glasses"] .source-window { border-radius: 0; }
+.palette-icon { width: 24px; height: 24px; flex: none; }
+.pal-label { font-size: 17px; font-weight: 500; }
+.pal-hint { font-family: var(--font-ui); font-size: 14px; }
+.pal-glyph { background: transparent; color: var(--accent); }
+.palette-card { background: var(--surface); }
+:root[data-layout="floating"] .palette-card { width: 760px; max-height: 80vh; }
+:root[data-layout="floating"] .palette-grid { grid-template-columns: repeat(3,minmax(0,1fr)); grid-auto-rows: 177px; gap: 10px; padding: 5px; }
+:root[data-layout="floating"] .source-tile-img { height: 130px; }
+:root[data-layout="floating"] .source-tile-cap { font: 14px var(--font-ui); padding: 10px; min-width: 0; }
+.source-tile { border-radius: 8px; }
+.win-settings { background: var(--surface); }
+#session-disconnect { align-self: center; width: 38px; height: 38px; margin-right: 2px; padding: 0; flex: none; background: transparent; border: 1px solid var(--border2); border-radius: 7px; color: var(--text); font: 24px var(--font-ui); cursor: pointer; }
+:root[data-layout="tabbed"] #session-disconnect { width: var(--touch); height: var(--touch); }
+:root[data-layout="glasses"] #session-disconnect { display: none; }
+/* Home is a scrollable page inside the same visual viewport used by the session. */
+#welcome.ss-home { display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; overflow: hidden; }
+#home-input { font-family: var(--font-ui); }
+#welcome .welcome-hint { font-size: 16px; }
+#welcome .ss-brand { font-size: 17.333px; }
+#welcome .ss-device-copy { text-align: left; }
+:root[data-layout="glasses"] #welcome .ss-content { padding-top: 16px; }
+:root[data-layout="glasses"] #welcome .ss-intro { margin-top: 0; }
+:root[data-layout="glasses"] #welcome .ss-intro h1 { font-size: 25px; }
+body:has(#welcome:not(.hidden)) #session:not(.ss-session-moving) { visibility: hidden; }
+
+:root[data-native-client="true"] #session-disconnect { display: none; }
+
+/* ===== Full-screen window ========================================================================
+   ONE window's picture fills the screen and every band of the session's chrome goes — the tab bar,
+   that window's titlebar, the status bar (`window-fullscreen.ts`, `WindowManager.setFullscreen`). Keyed
+   off `data-fullscreen` on the root and `.fullscreen` on the window, like every other conditional.
+
+   THE BARS ARE REMOVED, NOT COVERED, so #stage fills <body> — and <body> is what `ViewportFit` pins to
+   the VISUAL viewport on a touch screen, so the window follows the soft keyboard exactly as the tabbed
+   layout's does. A window `position: fixed` over the bars instead would sit against the LAYOUT viewport
+   and put its key strip under the keyboard. The terminal goes with them (`display: none`), and a hidden
+   terminal is never refit (`TermDeck.fit` reports nothing it cannot measure), so the shell's size does
+   not move under a full-screen window.
+
+   The PICTURE stays inside the safe area — the island, the rounded corners and the home indicator are
+   black — because a remote control has to be able to reach every pixel it shows. */
+.win-fullscreen { font-size: 10px; padding: 1px 5px; flex: none; font-family: var(--font-ui);
+  background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 3px;
+  line-height: 1.6; cursor: pointer; }
+.win-fullscreen:hover { border-color: var(--border2); }
+/* The glasses show one window already, and have nothing else to take away. */
+:root[data-layout="glasses"] .win-fullscreen { display: none; }
+.win-fullscreen-exit { display: none; }
+
+:root[data-fullscreen] #tabbar,
+:root[data-fullscreen] #statusbar,
+:root[data-fullscreen] #term-surface { display: none; }
+/* Out of `position: fixed` (floating's layer over both bars) and into the stage, which is all of <body> now.
+   SHOWN WHATEVER `data-tab` SAYS — later than, and as specific as, the tabbed layout's terminal-tab rule:
+   a `data-tab` left on the terminal would otherwise hide the only thing on screen, `Exit` with it. The
+   session also moves `data-tab` to the window surface on the way in (`onFullscreen`); this is the floor.
+   A PASSIVE client's `.hidden` still wins — that one leaves full screen instead. */
+:root[data-fullscreen] #windows { position: absolute; inset: 0; }
+:root[data-fullscreen] #windows:not(.hidden) { display: block; }
+:root[data-fullscreen] .source-window:not(.fullscreen) { display: none !important; }
+/* `!important` against the INLINE desktop geometry `applySize` owns, which stays underneath untouched
+   and comes back as it was. Shown even when not the focused window — the tabbed layout hides every
+   unfocused one — so focus moving elsewhere can never leave a black screen. */
+:root[data-fullscreen] .source-window.fullscreen {
+  position: absolute !important; inset: 0 !important;
+  width: auto !important; height: auto !important; display: flex !important;
+  border: 0; border-radius: 0; box-shadow: none; background: var(--term-bg);
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) var(--safe-b) env(safe-area-inset-left);
+}
+:root[data-fullscreen] .source-window.fullscreen > .win-titlebar,
+:root[data-fullscreen] .source-window.fullscreen > .win-resize { display: none; }
+/* THE WAY OUT, on the rail's column. Over the picture, so it wears its own dark glass whatever the
+   theme — the picture under it is the Mac's, light or dark, never ours. */
+:root[data-fullscreen] .source-window.fullscreen > .win-fullscreen-exit {
+  display: flex; align-items: center; justify-content: center;
+  position: absolute; z-index: 4; top: calc(env(safe-area-inset-top) + 8px); right: var(--rail-r);
+  height: 36px; padding: 0 14px; border-radius: 18px;
+  background: #000000a0; color: #fff; border: 1px solid #ffffff48;
+  font: 500 13px var(--font-ui); cursor: pointer; transition: opacity 180ms ease-out;
+}
+/* A MOUSE gets it back at the top edge (`onFullscreenPointer`); a finger has no hover and no Esc key,
+   so on a touch screen it never hides. */
+@media not all and (any-pointer: coarse) {
+  :root[data-fullscreen] .source-window.fullscreen:not([data-exit-shown]) > .win-fullscreen-exit {
+    opacity: 0; pointer-events: none;
+  }
+}
+/* A touch screen keeps the window's key strip — its ⌨ is the only way to the soft keyboard — at the
+   bottom edge, reaching over the home indicator the status bar used to cover, and the picture stops
+   where it starts: nothing the Mac shows is under a key. */
+@media (any-pointer: coarse) {
+  :root[data-fullscreen]:not([data-layout="glasses"]) .source-window.fullscreen {
+    padding-bottom: calc(var(--keystrip-h) + var(--safe-b));
+  }
+  :root[data-fullscreen]:not([data-layout="glasses"]) .source-window.fullscreen > .key-strip {
+    height: calc(var(--keystrip-h) + var(--safe-b)); padding-bottom: var(--safe-b);
+  }
+}
+
+/* A deliberately quiet landing for an empty session; no shell is started implicitly. */
+:root:not([data-layout="glasses"]) #term-empty { overflow: auto; padding: 32px 24px 7vh; }
+:root:not([data-layout="glasses"]) .term-empty-content { width: min(100%, 440px); margin: auto; text-align: center; }
+:root:not([data-layout="glasses"]) .term-empty-art { width: 64px; height: 56px; color: #ffffff50; margin-bottom: 20px; }
+:root:not([data-layout="glasses"]) #term-empty h1 { margin: 0 0 10px; font: 500 23px/1.2 var(--font-ui); letter-spacing: -.6px; color: var(--text); }
+:root:not([data-layout="glasses"]) .term-empty-description { margin: 0 auto 28px; max-width: none; font: 400 14px/1.5 var(--font-ui); color: var(--muted); }
+:root:not([data-layout="glasses"]) .term-empty-actions { max-width: 340px; margin-inline: auto; border-radius: 12px; overflow: hidden; background: #302f30; }
+:root:not([data-layout="glasses"]) #term-empty .term-empty-actions button {
+  display: flex; align-items: center; gap: 14px; width: 100%; min-height: 72px; padding: 14px 18px;
+  border: 0; border-radius: 0; background: transparent; text-align: left; font: 500 15px/1.3 var(--font-ui);
+}
+:root:not([data-layout="glasses"]) #term-empty .term-empty-actions button:not(.hidden) ~ button { border-top: 1px solid #ffffff0d; }
+:root:not([data-layout="glasses"]) #term-empty .term-empty-actions button:hover { background: #ffffff06; }
+:root:not([data-layout="glasses"]) #term-empty .term-empty-actions button:active { background: #ffffff0c; }
+:root:not([data-layout="glasses"]) #term-empty small { display: block; margin-top: 4px; font: 400 12px/1.4 var(--font-ui); color: var(--muted); }
+.term-empty-key { width: 24px; height: 24px; flex: none; color: var(--muted); font: 20px var(--font-mono); }
+.term-empty-arrow { margin-left: auto; color: var(--faint); font-size: 18px; }
+:root:not([data-layout="glasses"]) #term-empty #term-empty-browse { border: 0; background: transparent; margin-top: 16px; padding: 10px; color: var(--muted); font: 400 13px var(--font-ui); }
+:root:not([data-layout="glasses"]) #term-empty #term-empty-browse:hover { color: var(--text); }
+#term-empty-browse span { margin-left: 6px; }
+:root[data-layout="glasses"] .term-empty-content, :root[data-layout="glasses"] .term-empty-actions { display: contents; }
+:root[data-layout="glasses"] #term-empty :is(h1, p, svg, small, .term-empty-key, .term-empty-arrow, #term-empty-browse) { display: none; }
+
+/* This Mac keeps terminal controls here; simulator pictures live in native windows. */
+:root[data-native-simulators] #windows { display: none !important; }
+
+/* Update warnings belong to the top layer, including over native-client source layouts. */
+.host-update-detail { color:var(--muted); font-size:13px; }
+
+/* xterm measures each new glyph by changing a hidden span and reading offsetWidth.
+   Keep that synchronous layout inside its scratch box, not the entire client. The
+   spans retain their intrinsic widths; the zero-size box never contributes geometry. */
+.xterm-width-cache-measure-container {
+  position: absolute;
+  width: 0;
+  height: 0;
+  contain: strict;
+}
+
+/* Workspace video carries three planes. Only the decoded transparent canvas may be visible.
+   The session capture router owns occupied pixels; trusted events in gaps reach the terminal. */
+#windows .source-window.workspace-window { background: transparent; box-shadow: none; pointer-events: none; }
+.workspace-window .win-titlebar, .workspace-window .win-settings, .workspace-window .win-fs-exit { pointer-events: auto; }
+.workspace-window .win-body { background: transparent; pointer-events: none; }
+.workspace-window .win-body > video { opacity: 0; background: transparent; pointer-events: none; }
+.workspace-window .workspace-picture { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; transform-origin: 0 0; pointer-events: none; }
+.workspace-window .workspace-unavailable { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; color: var(--muted); background: var(--surface); font-family: var(--font-ui); }
+.workspace-window .workspace-unavailable[hidden] { display: none; }
+.workspace-window .win-grip, .workspace-window .win-resize { display: none; }
+
+/* DOM box-drawing runs use one stroke so compressed fallback glyphs cannot
+   overlap and darken the joins. Text stays present for native selection/copy. */
+.xterm-rows span.xterm-horizontal-rule {
+  position: relative;
+  -webkit-text-fill-color: transparent;
+}
+.xterm-rows span.xterm-horizontal-rule::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  border-top: 1px solid currentColor;
+  pointer-events: none;
+}

@@ -1,0 +1,83 @@
+/* Shared desktop and touch palette; the mobile sheet still follows ViewportFit's visible band. */
+:root:not([data-layout="glasses"]) .palette-card {
+  background: var(--term-bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+}
+:root[data-layout="floating"] .palette-overlay { padding: clamp(24px, 8vh, 80px) 20px 24px; background: #0007; }
+:root[data-layout="floating"] .palette-card {
+  width: 680px; max-width: 100%; max-height: 100%;
+  border: 1px solid #ffffff14; border-radius: 16px; box-shadow: 0 20px 60px #0006;
+}
+:root:not([data-layout="glasses"]) .palette-head {
+  min-height: 64px; flex: none; gap: 12px; padding: 0 16px 0 20px;
+  background: var(--tabbar); border-bottom: 0;
+}
+:root:not([data-layout="glasses"]) .palette-icon { width: 21px; height: 21px; color: var(--muted); }
+:root:not([data-layout="glasses"]) #palette-input { font: 400 17px/1.4 -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }
+:root:not([data-layout="glasses"]) #palette-input::placeholder { color: var(--muted); }
+:root:not([data-layout="glasses"]) #palette-close {
+  display: flex; width: 36px; height: 44px; border-radius: 8px; color: var(--muted); background: transparent;
+}
+:root:not([data-layout="glasses"]) #palette-close:hover { color: #fff; background: transparent; }
+/* 8 px at the BOTTOM (asked for, 2026-10-04): with no footer the card ends at its last row, and 16 read as taller
+   than the top's. The phone's sheet keeps its own (with the home indicator's inset), below. */
+:root:not([data-layout="glasses"]) .palette-body { padding: 16px 16px 8px; overscroll-behavior: contain; }
+.palette-section-title { display: none; }
+:root:not([data-layout="glasses"]) .palette-section-title {
+  display: block; margin: 4px 10px 10px; color: var(--muted);
+  font: 600 11px/1.4 -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  letter-spacing: .06em; text-transform: uppercase;
+}
+:root:not([data-layout="glasses"]) .palette-section-title:has(+ :empty) { display: none; }
+:root:not([data-layout="glasses"]) .palette-actions:not(:empty) { padding: 0; margin: 0 0 22px; border: 0; }
+/* The space under the commands SEPARATES them from what follows. With nothing after them — This Mac has no windows,
+   a filter left none — the body's own padding is the bottom, as it is the top (2026-10-04: with the key-hint
+   footer gone, that 22 px sat under the last command). */
+:root:not([data-layout="glasses"]) .palette-actions:not(:empty):has(~ .palette-grid:empty):not(:has(~ .palette-tmux-note:not(.hidden))):not(:has(~ .palette-empty:not(.hidden))) {
+  margin-bottom: 0;
+}
+:root:not([data-layout="glasses"]) .pal-row + .palette-section-title { margin-top: 22px; }
+:root:not([data-layout="glasses"]) .pal-row { min-height: 58px; padding: 9px 12px; gap: 13px; border-radius: 9px; }
+:root:not([data-layout="glasses"]) .pal-row.on { background: #ffffff0a; }
+:root:not([data-layout="glasses"]) .pal-row:hover { background: #ffffff0e; }
+:root:not([data-layout="glasses"]) .pal-glyph { width: 24px; height: 28px; color: var(--muted); background: transparent; }
+:root:not([data-layout="glasses"]) .pal-row.on .pal-glyph { color: var(--text); }
+:root:not([data-layout="glasses"]) .pal-label { font-size: 15px; line-height: 1.4; font-weight: 500; }
+:root:not([data-layout="glasses"]) .pal-hint { margin-top: 2px; font-size: 12px; line-height: 1.4; }
+:root:not([data-layout="glasses"]) .palette-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: 158px; gap: 12px; padding: 0;
+}
+:root:not([data-layout="glasses"]) .source-tile {
+  min-width: 0; border: 1px solid #ffffff0b; border-radius: 10px; background: #302f30; box-shadow: none;
+}
+:root:not([data-layout="glasses"]) .source-tile.on { border-color: #ffffff80; background: #3b3a3b; }
+:root:not([data-layout="glasses"]) .source-tile:hover { border-color: #ffffff40; }
+:root:not([data-layout="glasses"]) .source-tile-img { height: 116px; padding: 8px; background: #1c1b1c; border: 0; }
+:root:not([data-layout="glasses"]) .source-tile-img img { border-radius: 3px; }
+:root:not([data-layout="glasses"]) .source-tile-cap { min-height: 40px; padding: 8px 10px; gap: 6px; font: 500 12px/1.3 var(--font-ui); }
+:root:not([data-layout="glasses"]) .source-tile-cap .sim-dot { display: none; }
+:root:not([data-layout="glasses"]) .source-tile-cap .sim-check { color: var(--text); }
+:root:not([data-layout="glasses"]) .source-tile-state { font-size: 11px; }
+:root:not([data-layout="glasses"]) .palette-tmux-note { padding: 0 10px 16px; color: var(--muted); font: 12px/1.4 var(--font-ui); }
+:root:not([data-layout="glasses"]) .palette-empty { padding: 40px 16px; color: var(--text); font: 500 16px/1.5 var(--font-ui); }
+.palette-empty span { display: block; margin-top: 6px; color: var(--muted); font-size: 13px; font-weight: 400; }
+:root[data-layout="tabbed"] .palette-head {
+  --palette-chrome-top: max(12px, env(safe-area-inset-top));
+  height: calc(var(--native-bar-height) + var(--palette-chrome-top)); min-height: 0;
+  padding: var(--palette-chrome-top) var(--rail-r) 0 var(--rail-l);
+}
+:root[data-layout="tabbed"] #palette-close { width: 44px; }
+:root[data-layout="tabbed"] .palette-body {
+  padding: 16px var(--rail-r) calc(16px + var(--safe-b)) var(--rail-l);
+}
+:root[data-layout="tabbed"] .palette-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 150px; gap: 10px; }
+:root[data-layout="tabbed"] .source-tile-img { height: 108px; }
+:root[data-layout="tabbed"] .pal-row { min-height: 64px; }
+:root[data-layout="tabbed"] .pal-label { font-size: 16px; }
+:root[data-layout="tabbed"] #palette-input { font-size: 16px; }
+@media (max-width: 560px) {
+  :root[data-layout="floating"] .palette-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* A pick the session waits for (a terminal opening on This Mac — command-palette.ts `run`): busy until it lands. */
+#palette[aria-busy="true"], #palette[aria-busy="true"] * { cursor: progress; }

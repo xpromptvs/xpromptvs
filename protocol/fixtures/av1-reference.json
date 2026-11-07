@@ -1,0 +1,304 @@
+[
+  {
+    "name": "max UInt64 candidate",
+    "valid": true,
+    "message": {
+      "t": "av1-ref-frame",
+      "source": "win:1",
+      "epoch": "epoch",
+      "frameId": "18446744073709551615",
+      "slot": 7,
+      "slotGeneration": "0",
+      "rtpTimestamp": 4294967295,
+      "purpose": "candidate"
+    }
+  },
+  {
+    "name": "av1-ref-bind",
+    "valid": true,
+    "message": {
+      "t": "av1-ref-bind",
+      "source": "win:1",
+      "epoch": "epoch"
+    }
+  },
+  {
+    "name": "av1-ref-bound",
+    "valid": true,
+    "message": {
+      "t": "av1-ref-bound",
+      "source": "win:1",
+      "epoch": "epoch"
+    }
+  },
+  {
+    "name": "av1-ref-reset",
+    "valid": true,
+    "message": {
+      "t": "av1-ref-reset",
+      "source": "win:1",
+      "epoch": "epoch"
+    }
+  },
+  {
+    "name": "recovery receipt",
+    "valid": true,
+    "message": {
+      "t": "av1-ref-ack",
+      "source": "win:1",
+      "epoch": "epoch",
+      "frameId": "18446744073709551615",
+      "slot": 7,
+      "slotGeneration": "0",
+      "rtpTimestamp": 0,
+      "purpose": "recovery",
+      "recoveryId": "repair"
+    }
+  },
+  {
+    "name": "invalid frameId 1",
+    "valid": false,
+    "message": {
+      "t": "av1-ref-frame",
+      "source": "win:1",
+      "epoch": "epoch",
+      "frameId": 1,
+      "slot": 7,
+      "slotGeneration": "0",
+      "rtpTimestamp": 4294967295,
+      "purpose": "candidate"
+    }
+  },
+  {
+    "name": "invalid frameId 01",
+    "valid": false,
+    "message": {
+      "t": "av1-ref-frame",
+      "source": "win:1",
+      "epoch": "epoch",
+      "frameId": "01",
+      "slot": 7,
+      "slotGeneration": "0",
+      "rtpTimestamp": 4294967295,
+      "purpose": "candidate"
+    }
+  },
+  {
+    "name": "invalid frameId 18446744073709551616",
+    "valid": false,
+    "message": {
+      "t": "av1-ref-frame",
+      "source": "win:1",
+      "epoch": "epoch",
+      "frameId": "18446744073709551616",
+      "slot": 7,
+      "slotGeneration": "0",
+      "rtpTimestamp": 4294967295,
+      "purpose": "candidate"
+    }
+  },
+  {
+    "name": "invalid slot 8",
+    "valid": false,
+    "message": {
+      "t": "av1-ref-frame",
+      "source": "win:1",
+      "epoch": "epoch",
+      "frameId": "18446744073709551615",
+      "slot": 8,
+      "slotGeneration": "0",
+      "rtpTimestamp": 4294967295,
+      "purpose": "candidate"
+    }
+  },
+  {
+    "name": "invalid slot True",
+    "valid": false,
+    "message": {
+      "t": "av1-ref-frame",
+      "source": "win:1",
+      "epoch": "epoch",
+      "frameId": "18446744073709551615",
+      "slot": true,
+      "slotGeneration": "0",
+      "rtpTimestamp": 4294967295,
+      "purpose": "candidate"
+    }
+  },
+  {
+    "name": "invalid slot -1",
+    "valid": false,
+    "message": {
+      "t": "av1-ref-frame",
+      "source": "win:1",
+      "epoch": "epoch",
+      "frameId": "18446744073709551615",
+      "slot": -1,
+      "slotGeneration": "0",
+      "rtpTimestamp": 4294967295,
+      "purpose": "candidate"
+    }
+  },
+  {
+    "name": "invalid rtpTimestamp 1.5",
+    "valid": false,
+    "message": {
+      "t": "av1-ref-frame",
+      "source": "win:1",
+      "epoch": "epoch",
+      "frameId": "18446744073709551615",
+      "slot": 7,
+      "slotGeneration": "0",
+      "rtpTimestamp": 1.5,
+      "purpose": "candidate"
+    }
+  },
+  {
+    "name": "invalid rtpTimestamp True",
+    "valid": false,
+    "message": {
+      "t": "av1-ref-frame",
+      "source": "win:1",
+      "epoch": "epoch",
+      "frameId": "18446744073709551615",
+      "slot": 7,
+      "slotGeneration": "0",
+      "rtpTimestamp": true,
+      "purpose": "candidate"
+    }
+  },
+  {
+    "name": "invalid rtpTimestamp 4294967296",
+    "valid": false,
+    "message": {
+      "t": "av1-ref-frame",
+      "source": "win:1",
+      "epoch": "epoch",
+      "frameId": "18446744073709551615",
+      "slot": 7,
+      "slotGeneration": "0",
+      "rtpTimestamp": 4294967296,
+      "purpose": "candidate"
+    }
+  },
+  {
+    "name": "invalid epoch \u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9",
+    "valid": false,
+    "message": {
+      "t": "av1-ref-frame",
+      "source": "win:1",
+      "epoch": "\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9",
+      "frameId": "18446744073709551615",
+      "slot": 7,
+      "slotGeneration": "0",
+      "rtpTimestamp": 4294967295,
+      "purpose": "candidate"
+    }
+  },
+  {
+    "name": "invalid source ",
+    "valid": false,
+    "message": {
+      "t": "av1-ref-frame",
+      "source": "",
+      "epoch": "epoch",
+      "frameId": "18446744073709551615",
+      "slot": 7,
+      "slotGeneration": "0",
+      "rtpTimestamp": 4294967295,
+      "purpose": "candidate"
+    }
+  },
+  {
+    "name": "invalid purpose recovery",
+    "valid": false,
+    "message": {
+      "t": "av1-ref-frame",
+      "source": "win:1",
+      "epoch": "epoch",
+      "frameId": "18446744073709551615",
+      "slot": 7,
+      "slotGeneration": "0",
+      "rtpTimestamp": 4294967295,
+      "purpose": "recovery"
+    }
+  },
+  {
+    "name": "invalid t other",
+    "valid": false,
+    "message": {
+      "t": "other",
+      "source": "win:1",
+      "epoch": "epoch",
+      "frameId": "18446744073709551615",
+      "slot": 7,
+      "slotGeneration": "0",
+      "rtpTimestamp": 4294967295,
+      "purpose": "candidate"
+    }
+  },
+  {
+    "name": "invalid slotGeneration -1",
+    "valid": false,
+    "message": {
+      "t": "av1-ref-frame",
+      "source": "win:1",
+      "epoch": "epoch",
+      "frameId": "18446744073709551615",
+      "slot": 7,
+      "slotGeneration": "-1",
+      "rtpTimestamp": 4294967295,
+      "purpose": "candidate"
+    }
+  },
+  {
+    "name": "bound receiver track",
+    "valid": true,
+    "message": {
+      "t": "av1-ref-bound",
+      "source": "win:1",
+      "epoch": "e",
+      "trackId": "video-2-win:1"
+    }
+  },
+  {
+    "name": "empty receiver track",
+    "valid": false,
+    "message": {
+      "t": "av1-ref-bound",
+      "source": "win:1",
+      "epoch": "e",
+      "trackId": ""
+    }
+  },
+  {
+    "name": "missing runtime timestamp reset",
+    "valid": true,
+    "message": {
+      "t": "av1-ref-reset",
+      "source": "win:1",
+      "epoch": "e",
+      "reason": "timestamps-unavailable"
+    }
+  },
+  {
+    "name": "unknown reset reason",
+    "valid": false,
+    "message": {
+      "t": "av1-ref-reset",
+      "source": "win:1",
+      "epoch": "e",
+      "reason": "other"
+    }
+  },
+  {
+    "name": "reason on binding",
+    "valid": false,
+    "message": {
+      "t": "av1-ref-bound",
+      "source": "win:1",
+      "epoch": "e",
+      "reason": "timestamps-unavailable"
+    }
+  }
+]

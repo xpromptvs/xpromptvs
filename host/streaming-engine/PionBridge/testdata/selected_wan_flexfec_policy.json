@@ -1,0 +1,52 @@
+{
+  "evaluationSHA256": "3ebc7930811c844d0dcbf928ff72ff9ea36fe85a88281e79f9991146dd55b73f",
+  "evidence": {
+    "baselineEvaluationSHA256": "a2dd71fab722eb8a36c5683c2f7de575f147acd36255174ad019c468af05c78e",
+    "baselineFlexFECCandidateCatalogSHA256": "3800ae983a6e4e903c089022079ba9bf1da48e8b6d4ad414ecbf6b06aeb345f0",
+    "baselineManifestSHA256": "ab8cc63cdcbe849ebe2db9baf43328027cd481ccbbf5acee69c2d514124f3120",
+    "controllerPolicySHA256": {
+      "ll025-d1000-h500-b2x4": "82e9f889a520d6783c76dcc802320480c300ad13c623a1f44553e903c75d6bc6",
+      "ll050-d1500-h500-b2x4": "9f78c65d57098b4234bac2da3853688f46f455581c5aba74d9620c6a4b901f1b",
+      "ll100-d1000-h250-b2x4": "f5ee8c02baa849379d90005f7812ba03d9a6affb6a94275e1cfff4b346630787",
+      "ll100-d2500-h500-b2x4": "6547025de32955e83a7bafdd4d5a981f9c4cd1e9fe63f97bffc181cc641cb5f5"
+    },
+    "fullEvaluationSHA256": "a2dd71fab722eb8a36c5683c2f7de575f147acd36255174ad019c468af05c78e",
+    "fullManifestSHA256": "ab8cc63cdcbe849ebe2db9baf43328027cd481ccbbf5acee69c2d514124f3120",
+    "fullPromotionCatalogSHA256": "0bc556098fb73ecc27deb331d4a5aa7919c2e766f8076e0d2d339d1a4e7efba0",
+    "repeatFlexFECCandidateCatalogSHA256": "0bc556098fb73ecc27deb331d4a5aa7919c2e766f8076e0d2d339d1a4e7efba0",
+    "repeatManifestSHA256": "9b47982cea68382f1315d549f664bb16af6af8b5501934430318961f4dedd4cd",
+    "screenEvaluationSHA256": "86dc7c3b682efb368899ce2cd0c0cdb482b752957e02aa0e234a1fee31700457",
+    "screenManifestSHA256": "d2fc0fb703d0460dffe273f5104c06f0172f2d3e386582999abdda91889423c2",
+    "screenPromotionCatalogSHA256": "3800ae983a6e4e903c089022079ba9bf1da48e8b6d4ad414ecbf6b06aeb345f0",
+    "selectedRTXPolicySHA256": "59adc7a50616b32a991d0a026deeca2eb958104957b6e4375980fff6b3f77104"
+  },
+  "phase": "flexfec",
+  "profileCatalogSHA256": "22e93bdab68798f171292020cfca776408b8518146a636a731cbf1b206acff48",
+  "rtxCandidateCatalogSHA256": "b3b13405734271aea9e6e6402a76449f83f94481eef90cb660ea4e1f1b0205c9",
+  "schemaVersion": 1,
+  "selected": {
+    "controller": {
+      "burstWindowMilliseconds": 50,
+      "controllerVersion": "ll100-d1000-h250-b2x4",
+      "downCleanMilliseconds": 1000,
+      "evaluationIntervalMilliseconds": 100,
+      "feedbackStaleMilliseconds": 750,
+      "highBurstPackets": 4,
+      "highLossBasisPoints": 300,
+      "lowLossBasisPoints": 100,
+      "mediumBurstPackets": 2,
+      "mediumLossBasisPoints": 100,
+      "minimumFinalizedPackets": 64,
+      "queueTrendMilliseconds": 3,
+      "reorderingGraceMilliseconds": 25,
+      "repairLossCapBasisPoints": 5000,
+      "repairLossMinimumPackets": 8,
+      "schemaVersion": 1,
+      "transitionHoldMilliseconds": 250,
+      "upHoldWindows": 2
+    },
+    "id": "ll100-d1000-h250-b2x4",
+    "policy": "adaptive"
+  },
+  "sourceRevision": "2904c9182ee759e521212285b76190d1fd65386e"
+}

@@ -1,0 +1,61 @@
+%begin 1790304386 298 0
+%end 1790304386 298 0
+%session-changed $0 alpha
+%unlinked-window-renamed @1 zsh
+%begin 1790304387 304 1
+%end 1790304387 304 1
+%layout-change @0 a87d,100x30,0,0,0 a87d,100x30,0,0,0 *
+%output %0 \015\015\033[0m\033[27m\033[24m\033[J$ 
+%begin 1790304388 307 1
+%end 1790304388 307 1
+%output %0 p\010printf '\134\134 \134033[31
+%output %0 mre
+%output %0 d\1340
+%output %0 33
+%output %0 [0
+%output %0 m
+%output %0  
+%output %0 é\134n'\033[?2004l\015\015\012
+%output %0 \134 \033[31mred\033[0m é\015\012
+%output %0 \033[1m\033[7m%\033[27m\033[1m\033[0m                                                                                                   \015 \015
+%output %0 \015\033[0m\033[27m\033[24m\033[J$ 
+%output %0 \033[K\033[?2004h
+%begin 1790304389 308 1
+%end 1790304389 308 1
+%begin 1790304390 309 1
+%end 1790304390 309 1
+%extended-output %0 0 : e
+%extended-output %0 0 : \010echo X\033[?2004l\015\015\012
+%extended-output %0 0 : X\015\012
+%extended-output %0 0 : \033[1m\033[7m%\033[27m\033[1m\033[0m                                                                                                   \015 \015
+%extended-output %0 0 : \015\033[0m\033[27m\033[24m\033[J$ \033[K\033[?2004h
+%begin 1790304392 310 1
+$0	alpha	1	1
+$1	beta	1	0
+%end 1790304392 310 1
+%begin 1790304392 311 1
+%end 1790304392 311 1
+%session-changed $1 beta
+%layout-change @1 a87e,100x30,0,0,1 a87e,100x30,0,0,1 *
+%extended-output %1 0 : \015\015\033[0m\033[27m\033[24m\033[J$ 
+%begin 1790304393 317 1
+%end 1790304393 317 1
+%session-renamed $1 gamma
+%begin 1790304394 319 1
+%end 1790304394 319 1
+%unlinked-window-add @2
+%sessions-changed
+%unlinked-window-renamed @2 tmux
+%unlinked-window-renamed @2 zsh
+%begin 1790304395 324 1
+%end 1790304395 324 1
+%sessions-changed
+%unlinked-window-close @2
+%begin 1790304395 327 1
+parse error: unknown command: bogus-command
+%error 1790304395 327 1
+%begin 1790304396 328 1
+%end 1790304396 328 1
+%extended-output %1 0 : e\010exit\033[?2004l\015\015\012
+%sessions-changed
+%exit

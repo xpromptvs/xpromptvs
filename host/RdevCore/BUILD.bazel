@@ -1,0 +1,105 @@
+load("@rules_swift//swift:swift.bzl", "swift_library", "swift_test")
+
+# 100 source files, no resources. SwiftTerm is the only external dependency: RdevCore
+# feeds PTY bytes to its headless Terminal and reads back an attributed buffer.
+swift_library(
+    name = "RdevCore",
+    srcs = glob(["Sources/RdevCore/**/*.swift"]) + ["//config:native_product_features"],
+    module_name = "RdevCore",
+    visibility = ["//visibility:public"],
+    deps = ["//third_party/swiftterm:SwiftTerm", "//third_party/zstd:Zstd"],
+    # System zlib (macOS SDK, module `zlib`, which autolinks "z"; stated explicitly so a static link of
+    # this library into the dylib cannot drop it). Raw DEFLATE with Z_SYNC_FLUSH for the terminal
+    # channel — Apple's Compression framework has no sync flush (TermDeflate.swift).
+    linkopts = ["-lz"],
+)
+
+# TEST-ONLY: the terminal serializer's corpus reader (protocol/fixtures/term-corpus) and what the
+# emitter makes of each case, shared by the fixture writer //tools/TermSnapshotFixtures and
+# RdevCoreTests' freshness check so the two can never compute it differently; and `TermInflater`, the
+# receiving end of the terminal channel's DEFLATE stream, which only tests use (the host never
+# inflates); and `TermWidthTable`, SwiftTerm's column table as protocol/fixtures/term-widths.json
+# (written by the same tool, bundled by the client's xterm.js). `testonly` is LOAD-BEARING: it keeps test code out of the product — Bazel refuses any
+# non-testonly target (the app) that tries to depend on it.
+swift_library(
+    name = "RdevTermCorpus",
+    testonly = True,
+    srcs = [
+        "TestSupport/TermCorpus.swift",
+        "TestSupport/TermFixtureEncoder.swift",
+        "TestSupport/TermInflater.swift",
+        "TestSupport/TermZstdInflater.swift",
+        "TestSupport/TermZstdVectors.swift",
+        "TestSupport/TermWidthTable.swift",
+    ],
+    module_name = "RdevTermCorpus",
+    # RdevHostKitTests decodes the terminal wire's snapshots with `TermInflater` (ChannelHubTerminalTests).
+    visibility = [
+        "//host/RdevHostKit:__pkg__",
+        "//tools/TermSnapshotFixtures:__pkg__",
+        "//tools/TermZstdFixtures:__pkg__",
+    ],
+    deps = [
+        ":RdevCore",
+        "//third_party/zstd:Zstd",
+        "//third_party/swiftterm:SwiftTerm",
+    ],
+)
+
+# 138 files, 1507 tests (2026-10-14) — `<testcase`s in a run's test.xml: 1499 XCTest and 8 Swift
+# Testing (`@Suite`: OfferRestartFlagTests, PlayoutDelayControlTests). WATCH THE COUNT, not merely a green result: a glob that
+# misses a directory, or a discovery difference between SwiftPM and rules_swift,
+# presents as a passing run that silently covers less.
+#
+# NOTE this is a number to check by eye, NOT an enforced gate — nothing in
+# scripts/test-all.sh asserts it, unlike gate-engine-test-counts.sh which does assert
+# its suites. It had also drifted badly (it read "37 files, 318 tests" against a real 43
+# and 487 at the time) precisely because nothing executes it. Making it a real gate is
+# separate work; until then, update it when you add tests — this comment then drifted
+# again INSIDE the very branch that fixed it, 487 -> 488, for exactly that reason.
+#
+# THIS PACKAGE HAS A SECOND swift_test SINCE 2026-08-17 (`AV1ColourTests`, below) and this
+# comment describes ONLY `RdevCoreTests`. Keep them apart: 1394 is this target's count, and a
+# reader who conflates the two gets a number that is wrong for both.
+swift_test(
+    name = "RdevCoreTests",
+    srcs = glob(["Tests/RdevCoreTests/**/*.swift"]),
+    # LOAD-BEARING: six golden tests read protocol/fixtures/*.bin, locating them by
+    # walking up from #filePath to the repo root. That arithmetic works unchanged inside
+    # the runfiles tree — but the files are only THERE if declared, so without this the
+    # tests fail with "no such file". SwiftPM never needed the declaration because it
+    # runs against the real working tree; Bazel's sandbox contains only the graph.
+    data = ["//protocol:fixtures"],
+    deps = [
+        ":RdevCore",
+        ":RdevTermCorpus",
+    ],
+)
+
+# THE AV1 COLOUR TAG — kept OUT of RdevCoreTests on purpose, and NOT a test of RdevCore. It
+# drives LLV's libaom encoder and a real VTDecompressionSession, so it links libaom and needs a
+# working AV1 decoder; neither belongs in a suite of pure portable logic expected to run in a
+# third of a second. It lives in THIS package rather than beside the engine because the engine's
+# own Tests/ tree is frozen (gate G1, scripts/gate-import-integrity.sh), and rather than beside
+# RdevHostKit because there it would have to link pion and AppKit to say the same thing. What it
+# uses from RdevCore is exactly rdev's contribution to the colour path: ColorConvert's BT.709
+# conversion and AV1Bitstream's sequence-header parse.
+#
+# 6 XCTest tests, TWO OF WHICH ARE CONTROL ARMS asserting the UNTAGGED encoder is visibly wrong
+# (`testUntaggedSmallFrameIsVisiblyWrong` and `testUntaggedSequenceHeaderCarriesNoColourDescription`).
+# That is what stops this suite going quietly green if VideoToolbox ever stops applying its
+# resolution heuristic, or if the harness stops measuring colour at all.
+#
+# `testLargeFrameRoundTripsWithinCodecNoise` IS NOT ONE OF THEM — it passes with AND without the
+# fix, by design, because 1280x720 is where the bug is invisible. It documents that; it does not
+# discriminate. Counted as a control arm here at first, which is worth naming rather than quietly
+# fixing: a non-discriminating test counted as a control arm is coverage that does not exist. Same
+# eyeball rule as above — nothing enforces either count.
+swift_test(
+    name = "AV1ColourTests",
+    srcs = glob(["Tests/AV1ColourTests/**/*.swift"]),
+    deps = [
+        ":RdevCore",
+        "//host/streaming-engine/Sources/LLVCore:LLVCore",
+    ],
+)

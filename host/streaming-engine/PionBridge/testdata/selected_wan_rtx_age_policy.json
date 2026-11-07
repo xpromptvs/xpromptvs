@@ -1,0 +1,23 @@
+{
+  "evaluationSHA256": "00a79b801adedcec4007d5216247542af72bea64d2ed483ce210f5202da8ce17",
+  "evidence": {
+    "adaptiveEvaluationSHA256": "00a79b801adedcec4007d5216247542af72bea64d2ed483ce210f5202da8ce17",
+    "adaptiveManifestSHA256": "11962887beddc21bdaba00e818d0cf439f8f048c68b934af712cee3b0b63e719",
+    "fixedEvaluationSHA256": "3507a1a588b97a7d70362628eab75889e6e10f9053511c4bcad542346ae1f221",
+    "fixedManifestSHA256": "c44b24bdc7204c9eb7fe0bbd3bfbb9b27abc232a4c2d1fa2306d2fface4a5232",
+    "fixedSelectionSHA256": "4b04879c295979827c639ae6e8ca85dff5f536f288ba729b24f96070d318b105"
+  },
+  "phase": "adaptive-rtx",
+  "profileCatalogSHA256": "22e93bdab68798f171292020cfca776408b8518146a636a731cbf1b206acff48",
+  "rtxCandidateCatalogSHA256": "b3b13405734271aea9e6e6402a76449f83f94481eef90cb660ea4e1f1b0205c9",
+  "rationale": "Fixed 30 ms minimized aggregate stall excess. Fixed 75 ms remained inside the latency and longest-stall gates but regressed aggregate stall excess by 3.64%. Every RTT-aware candidate regressed aggregate stall excess; the mildest RTT candidate regressed by 1.25% and exceeded the 2 ms matched-frame p50 gate. Ages above 30 ms did send useful RTX at high RTT, including 2,554 delivered RTX packets for fixed 500 ms across the 300/500 ms RTT cases, but that recovery increased rather than reduced aggregate stalls.",
+  "schemaVersion": 1,
+  "selected": {
+    "capMilliseconds": 30,
+    "id": "fixed-030",
+    "mode": "fixed",
+    "multiplierMilli": 1000,
+    "rtxMaxAgeMilliseconds": 30
+  },
+  "sourceRevision": "cf9eded1a6138c95be88b766a49c5f892f75043f"
+}

@@ -1,0 +1,43 @@
+load("@rules_swift//swift:swift.bzl", "swift_test")
+load("@rules_swift//swift:swift_interop_hint.bzl", "swift_interop_hint")
+
+# THE SIMULATOR SHIM — the repo's first objc_library, and Objective-C ON PURPOSE: CoreSimulator's proxies THROW and
+# Swift cannot catch an exception (docs/superpowers/specs/2026-10-13-simulator-sources-design.md). It links NOTHING
+# of CoreSimulator: the framework is dlopen'd at first use, so the app builds and runs on a Mac without Xcode.
+objc_library(
+    name = "RdevSimKit",
+    srcs = [
+        "Sources/RSKDeviceSet.m",
+        "Sources/RSKFramebuffer.m",
+        "Sources/RSKHIDConnection.m",
+        "Sources/RSKInternal.h",
+        "Sources/RSKMessages.m",
+    ],
+    hdrs = ["Sources/include/RdevSimKit.h"],
+    includes = ["Sources/include"],
+    sdk_frameworks = ["CoreGraphics", "Foundation", "IOSurface"],
+    aspect_hints = [":RdevSimKit_interop"],
+    visibility = ["//visibility:public"],
+)
+
+swift_interop_hint(
+    name = "RdevSimKit_interop",
+    module_name = "RdevSimKit",
+)
+
+# Pure: the DTUHID dictionaries, read back field by field and TYPE by type.
+swift_test(
+    name = "RdevSimKitTests",
+    srcs = glob(["Tests/RdevSimKitTests/**/*.swift"]),
+    deps = [":RdevSimKit"],
+)
+
+# LIVE, and manual: needs a booted simulator the RUNNER created, named by RDEV_SIM_LIVE_UDID, and talks to
+# CoreSimulatorService over XPC — which the darwin sandbox refuses, hence no-sandbox.
+#   bazelisk test //host/RdevSimKit:RdevSimKitLiveTests --test_env=RDEV_SIM_LIVE_UDID=<udid>
+swift_test(
+    name = "RdevSimKitLiveTests",
+    srcs = glob(["Tests/RdevSimKitLiveTests/**/*.swift"]),
+    tags = ["manual", "no-sandbox"],
+    deps = [":RdevSimKit"],
+)

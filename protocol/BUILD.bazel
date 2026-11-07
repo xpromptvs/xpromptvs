@@ -1,0 +1,16 @@
+# Golden fixtures shared across languages: generated/owned here, and read by BOTH the
+# TypeScript tests in this package and RdevCore's Swift tests, which locate them by
+# walking up from #filePath to the repo root.
+#
+# Declaring them makes a cross-language dependency EXPLICIT that SwiftPM never knew
+# about — under Bazel the six golden tests fail without it, because the sandbox contains
+# only what the graph declares. That is the graph doing its job, not a regression.
+#
+# NOTE this package survives the web bundle's removal from the graph. The `src` filegroup
+# that fed //web:dist is gone, but `fixtures` is a dependency of //host/RdevCore, which is
+# very much still here.
+filegroup(
+    name = "fixtures",
+    srcs = glob(["fixtures/**"]),
+    visibility = ["//visibility:public"],
+)

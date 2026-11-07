@@ -1,0 +1,61 @@
+load("@crates//:defs.bzl", "all_crate_deps")
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_static_library", "rust_test")
+load("@rules_swift//swift:swift.bzl", "swift_interop_hint")
+
+# THE HOST'S NOISE SESSION — `snow` behind a C ABI of our own, linked into the Swift host.
+#
+# Static, not shared, like libaom beside it: there is no dylib to sign, load or postfix-fix, and the
+# ABI is six functions that never call back out.
+#
+# WHY THE BOUNDARY EXISTS AT ALL is in src/lib.rs and in
+# docs/superpowers/specs/2026-09-12-noise-implementation-choice.md — three other candidates were
+# eliminated on facts, and if a fourth ever displaces snow, only that file moves.
+# The same source as an RLIB, for the test to link against. Compiled twice, which is the ordinary
+# cost of a library that is both a Rust dependency and a C archive; the alternative is a test that
+# `#[path]`-includes the source, which cargo accepts and Bazel cannot resolve.
+rust_library(
+    name = "rdev_noise_lib",
+    srcs = ["src/lib.rs"],
+    crate_name = "rdev_noise",
+    edition = "2021",
+    deps = all_crate_deps(normal = True),
+)
+
+rust_static_library(
+    name = "rdev_noise",
+    srcs = ["src/lib.rs"],
+    edition = "2021",
+    visibility = ["//visibility:public"],
+    deps = all_crate_deps(normal = True),
+)
+
+# The vector fixture is shared with the TypeScript side, which is the point of it: two
+# implementations checked against the same EXTERNAL answer rather than against each other. Declared
+# as data because Bazel's sandbox contains only what the graph names — the same reason
+# //protocol:fixtures is a declared dependency of RdevCore's tests.
+rust_test(
+    name = "rdev_noise_test",
+    srcs = ["tests/vectors.rs"],
+    data = ["//protocol:fixtures"],
+    edition = "2021",
+    deps = [":rdev_noise_lib"] + all_crate_deps(normal = True, normal_dev = True),
+)
+
+# The C face of the archive, so Swift can import it. The header is hand-written (rules_rust emits no
+# header) and `NoiseSessionTests` is what keeps it honest against src/lib.rs — two statements of one
+# contract, which is exactly the kind of pair that drifts silently.
+cc_library(
+    name = "CRdevNoise",
+    hdrs = ["include/rdev_noise.h"],
+    aspect_hints = [":CRdevNoise_interop"],
+    includes = ["include"],
+    visibility = ["//visibility:public"],
+    deps = [":rdev_noise"],
+)
+
+# Generates the module map, so `import CRdevNoise` resolves without maintaining one by hand — the
+# same mechanism //host/RdevHostKit:CPionBridge_interop uses.
+swift_interop_hint(
+    name = "CRdevNoise_interop",
+    module_name = "CRdevNoise",
+)

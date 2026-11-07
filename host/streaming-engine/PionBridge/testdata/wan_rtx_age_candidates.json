@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "candidates": [
+    {"id":"fixed-030","mode":"fixed","rtxMaxAgeMilliseconds":30,"multiplierMilli":1000,"capMilliseconds":30},
+    {"id":"fixed-075","mode":"fixed","rtxMaxAgeMilliseconds":75,"multiplierMilli":1000,"capMilliseconds":75},
+    {"id":"fixed-150","mode":"fixed","rtxMaxAgeMilliseconds":150,"multiplierMilli":1000,"capMilliseconds":150},
+    {"id":"fixed-300","mode":"fixed","rtxMaxAgeMilliseconds":300,"multiplierMilli":1000,"capMilliseconds":300},
+    {"id":"fixed-500","mode":"fixed","rtxMaxAgeMilliseconds":500,"multiplierMilli":1000,"capMilliseconds":500},
+    {"id":"rtt-m1000-c300","mode":"rtt","rtxMaxAgeMilliseconds":30,"multiplierMilli":1000,"capMilliseconds":300},
+    {"id":"rtt-m1000-c500","mode":"rtt","rtxMaxAgeMilliseconds":30,"multiplierMilli":1000,"capMilliseconds":500},
+    {"id":"rtt-m1250-c300","mode":"rtt","rtxMaxAgeMilliseconds":30,"multiplierMilli":1250,"capMilliseconds":300},
+    {"id":"rtt-m1250-c500","mode":"rtt","rtxMaxAgeMilliseconds":30,"multiplierMilli":1250,"capMilliseconds":500},
+    {"id":"rtt-m1500-c300","mode":"rtt","rtxMaxAgeMilliseconds":30,"multiplierMilli":1500,"capMilliseconds":300},
+    {"id":"rtt-m1500-c500","mode":"rtt","rtxMaxAgeMilliseconds":30,"multiplierMilli":1500,"capMilliseconds":500}
+  ]
+}

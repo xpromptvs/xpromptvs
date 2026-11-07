@@ -1,0 +1,257 @@
+[
+ {
+  "name": "hello-host",
+  "msg": {
+   "t": "hello",
+   "role": "host",
+   "token": "tok"
+  },
+  "valid": true
+ },
+ {
+  "name": "hello-client-with-codecs",
+  "msg": {
+   "t": "hello",
+   "role": "client",
+   "token": "tok",
+   "codecs": [
+    "deflate"
+   ]
+  },
+  "valid": true
+ },
+ {
+  "name": "hello-missing-token",
+  "msg": {
+   "t": "hello",
+   "role": "host"
+  },
+  "valid": false
+ },
+ {
+  "name": "hello-empty-token",
+  "msg": {
+   "t": "hello",
+   "role": "host",
+   "token": ""
+  },
+  "valid": false
+ },
+ {
+  "name": "hello-bad-role",
+  "msg": {
+   "t": "hello",
+   "role": "spectator",
+   "token": "tok"
+  },
+  "valid": false
+ },
+ {
+  "name": "hello-extra-prop",
+  "msg": {
+   "t": "hello",
+   "role": "host",
+   "token": "tok",
+   "x": 1
+  },
+  "valid": false
+ },
+ {
+  "name": "offer",
+  "msg": {
+   "t": "offer",
+   "sdp": "v=0..."
+  },
+  "valid": true
+ },
+ {
+  "name": "offer-missing-sdp",
+  "msg": {
+   "t": "offer"
+  },
+  "valid": false
+ },
+ {
+  "name": "answer",
+  "msg": {
+   "t": "answer",
+   "sdp": "v=0..."
+  },
+  "valid": true
+ },
+ {
+  "name": "ice",
+  "msg": {
+   "t": "ice",
+   "cand": {
+    "candidate": "x"
+   }
+  },
+  "valid": true
+ },
+ {
+  "name": "ice-missing-cand",
+  "msg": {
+   "t": "ice"
+  },
+  "valid": false
+ },
+ {
+  "name": "bye",
+  "msg": {
+   "t": "bye",
+   "reason": "done"
+  },
+  "valid": true
+ },
+ {
+  "name": "bye-no-reason",
+  "msg": {
+   "t": "bye"
+  },
+  "valid": true
+ },
+ {
+  "name": "ping",
+  "msg": {
+   "t": "ping"
+  },
+  "valid": true
+ },
+ {
+  "name": "pong",
+  "msg": {
+   "t": "pong"
+  },
+  "valid": true
+ },
+ {
+  "name": "welcome",
+  "msg": {
+   "t": "welcome",
+   "sessionId": "s1",
+   "turn": {
+    "urls": [
+     "turn:x"
+    ],
+    "username": "u",
+    "credential": "c",
+    "ttl": 600
+   }
+  },
+  "valid": true
+ },
+ {
+  "name": "welcome-turn-extra",
+  "msg": {
+   "t": "welcome",
+   "sessionId": "s1",
+   "turn": {
+    "urls": [
+     "turn:x"
+    ],
+    "username": "u",
+    "credential": "c",
+    "ttl": 600,
+    "x": 1
+   }
+  },
+  "valid": false
+ },
+ {
+  "name": "peer-joined",
+  "msg": {
+   "t": "peer-joined",
+   "role": "client"
+  },
+  "valid": true
+ },
+ {
+  "name": "peer-left",
+  "msg": {
+   "t": "peer-left",
+   "role": "host"
+  },
+  "valid": true
+ },
+ {
+  "name": "error",
+  "msg": {
+   "t": "error",
+   "code": "bad-token"
+  },
+  "valid": true
+ },
+ {
+  "name": "unknown-type",
+  "msg": {
+   "t": "frobnicate"
+  },
+  "valid": false
+ },
+ {
+  "name": "missing-t",
+  "msg": {
+   "role": "host"
+  },
+  "valid": false
+ },
+ {
+  "name": "e2e-minimal",
+  "msg": {
+   "t": "e2e",
+   "ct": "AA"
+  },
+  "valid": true
+ },
+ {
+  "name": "e2e-with-peer-and-mode",
+  "msg": {
+   "t": "e2e",
+   "ct": "abc-_123",
+   "peer": "c1",
+   "mode": "pair"
+  },
+  "valid": true
+ },
+ {
+  "name": "e2e-missing-ct",
+  "msg": {
+   "t": "e2e"
+  },
+  "valid": false
+ },
+ {
+  "name": "e2e-empty-ct",
+  "msg": {
+   "t": "e2e",
+   "ct": ""
+  },
+  "valid": false
+ },
+ {
+  "name": "e2e-base64-not-base64url",
+  "msg": {
+   "t": "e2e",
+   "ct": "ab+c/d"
+  },
+  "valid": false
+ },
+ {
+  "name": "e2e-padded-ct",
+  "msg": {
+   "t": "e2e",
+   "ct": "abc="
+  },
+  "valid": false
+ },
+ {
+  "name": "e2e-unknown-mode",
+  "msg": {
+   "t": "e2e",
+   "ct": "AA",
+   "mode": "sideways"
+  },
+  "valid": false
+ }
+]

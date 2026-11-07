@@ -1,0 +1,205 @@
+{
+  "identities": [
+    {
+      "name": "valid identity",
+      "value": {
+        "channel": "staging",
+        "build": 10,
+        "version": "0.2.0",
+        "revision": "abc123",
+        "published": true
+      },
+      "valid": true
+    },
+    {
+      "name": "reject channel other",
+      "value": {
+        "channel": "other",
+        "build": 10,
+        "version": "0.2.0",
+        "revision": "abc123",
+        "published": true
+      },
+      "valid": false
+    },
+    {
+      "name": "reject build 0",
+      "value": {
+        "channel": "staging",
+        "build": 0,
+        "version": "0.2.0",
+        "revision": "abc123",
+        "published": true
+      },
+      "valid": false
+    },
+    {
+      "name": "reject build -1",
+      "value": {
+        "channel": "staging",
+        "build": -1,
+        "version": "0.2.0",
+        "revision": "abc123",
+        "published": true
+      },
+      "valid": false
+    },
+    {
+      "name": "reject build 1.5",
+      "value": {
+        "channel": "staging",
+        "build": 1.5,
+        "version": "0.2.0",
+        "revision": "abc123",
+        "published": true
+      },
+      "valid": false
+    },
+    {
+      "name": "reject build 9007199254740992",
+      "value": {
+        "channel": "staging",
+        "build": 9007199254740992,
+        "version": "0.2.0",
+        "revision": "abc123",
+        "published": true
+      },
+      "valid": false
+    },
+    {
+      "name": "reject build True",
+      "value": {
+        "channel": "staging",
+        "build": true,
+        "version": "0.2.0",
+        "revision": "abc123",
+        "published": true
+      },
+      "valid": false
+    },
+    {
+      "name": "reject published 1",
+      "value": {
+        "channel": "staging",
+        "build": 10,
+        "version": "0.2.0",
+        "revision": "abc123",
+        "published": 1
+      },
+      "valid": false
+    },
+    {
+      "name": "reject version ",
+      "value": {
+        "channel": "staging",
+        "build": 10,
+        "version": "",
+        "revision": "abc123",
+        "published": true
+      },
+      "valid": false
+    },
+    {
+      "name": "reject revision ",
+      "value": {
+        "channel": "staging",
+        "build": 10,
+        "version": "0.2.0",
+        "revision": "",
+        "published": true
+      },
+      "valid": false
+    },
+    {
+      "name": "missing legacy identity",
+      "value": null,
+      "valid": false
+    }
+  ],
+  "comparisons": [
+    {
+      "name": "older",
+      "host": {
+        "channel": "staging",
+        "build": 10,
+        "version": "0.2.0",
+        "revision": "abc123",
+        "published": true
+      },
+      "client": {
+        "channel": "staging",
+        "build": 11,
+        "version": "0.2.0",
+        "revision": "abc123",
+        "published": true
+      },
+      "result": "older"
+    },
+    {
+      "name": "equal",
+      "host": {
+        "channel": "staging",
+        "build": 10,
+        "version": "0.2.0",
+        "revision": "abc123",
+        "published": true
+      },
+      "client": {
+        "channel": "staging",
+        "build": 10,
+        "version": "0.2.0",
+        "revision": "abc123",
+        "published": true
+      },
+      "result": "equal"
+    },
+    {
+      "name": "newer",
+      "host": {
+        "channel": "staging",
+        "build": 12,
+        "version": "0.2.0",
+        "revision": "abc123",
+        "published": true
+      },
+      "client": {
+        "channel": "staging",
+        "build": 11,
+        "version": "0.2.0",
+        "revision": "abc123",
+        "published": true
+      },
+      "result": "newer"
+    },
+    {
+      "name": "cross channel",
+      "host": {
+        "channel": "staging",
+        "build": 10,
+        "version": "0.2.0",
+        "revision": "abc123",
+        "published": true
+      },
+      "client": {
+        "channel": "public",
+        "build": 10,
+        "version": "0.2.0",
+        "revision": "abc123",
+        "published": true
+      },
+      "result": "channel-mismatch"
+    },
+    {
+      "name": "legacy unknown",
+      "host": null,
+      "client": {
+        "channel": "staging",
+        "build": 10,
+        "version": "0.2.0",
+        "revision": "abc123",
+        "published": true
+      },
+      "result": "unknown"
+    }
+  ]
+}

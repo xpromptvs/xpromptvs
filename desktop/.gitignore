@@ -1,0 +1,5 @@
+node_modules/
+dist/
+release/
+# The CHECKS' bundle (npm run build:check); release/ above is the user's own.
+release-check/

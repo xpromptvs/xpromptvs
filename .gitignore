@@ -1,0 +1,57 @@
+.DS_Store
+node_modules/
+.build/
+tools/SimTapTarget/build/
+*.xcodeproj/
+DerivedData/
+.wrangler/
+test-results/
+playwright-report/
+host/pion-bridge/.svtav1/
+tools/WinTapTarget/build/
+
+# The native-receiver checkout + toolchain (12 GB / 776 MB) and its machine-local build
+# scratch. Machine-local by nature (a gclient sync + a 30-60 minute ninja build), and
+# must live under the repo (see MODULE.bazel's local repositories) without ever being
+# committed to it.
+third_party/libwebrtc-checkout/
+third_party/depot-tools/
+third_party/rdev-libwebrtc-build/
+third_party/rdev-libwebrtc-install/
+
+# Bazel convenience symlinks (created in the workspace root on every build).
+bazel-bin
+bazel-out
+bazel-rdev
+bazel-testlogs
+
+# `go list -m all` from either Go module materialises this at the repo root; the
+# commands our scripts actually run (go build/test) do not. Untracked either way.
+go.work.sum
+
+# `go build` in host/streaming-engine/PionBridge/ drops its binary here, named after the package.
+# It reached a commit once (14 MB, stripped from history before push) because a task staged the
+# whole directory. Ignored by FULL PATH rather than by bare name, so an unrelated `pionbridge`
+# elsewhere is not silently hidden.
+/host/streaming-engine/PionBridge/pionbridge
+
+# Screenshots the browser checks write beside themselves — rail-check and rail-check-desktop drop
+# shot-*.png in the repo root, host-sources-probe drops one in e2e/. They are check OUTPUT, not
+# evidence: regenerate them by re-running the check. Root-anchored and e2e-anchored so a deliberate
+# shot-*.png committed under docs/ (a defect record) is still staged normally.
+/shot-*.png
+/e2e/shot-*.png
+
+# Agent scratch. Root-anchored, so the COMMITTED design record in docs/superpowers/ is untouched.
+# AGENTS.md is the source of truth for every agent; each runtime writes its own scratch directory
+# here and a new runtime adds a line to this block rather than a new convention.
+/.claude/
+/.superpowers/
+
+# Rust build output. The LOCKFILE is committed (host/rdev-noise/Cargo.lock): a crypto dependency
+# resolving to a different version between two machines is exactly the drift a lockfile exists to
+# stop, and this one sits on the security boundary.
+host/rdev-noise/target/
+
+# Bazel names one convenience link after the checkout directory.
+/bazel-*

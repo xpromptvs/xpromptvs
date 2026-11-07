@@ -1,0 +1,29 @@
+load("@rules_apple//apple:macos.bzl", "macos_command_line_application")
+load("@rules_swift//swift:swift.bzl", "swift_library")
+
+# TEST-ONLY. Writes protocol/fixtures/term-snapshot/*.emitted.bin: what the Swift emitter makes of
+# each corpus case (protocol/fixtures/term-corpus, scripts/gen_term_corpus.py), for the xterm.js
+# differential check (web/test/term-snapshot-fidelity.test.ts) to replay. RdevCoreTests'
+# TermSnapshotFixtureTests fails when these are stale.
+#
+# In Bazel for the same reason as //tools/InputToDecodeReduce: it must run RdevCore's REAL code — a
+# script reimplementing the emitter would test the reimplementation.
+#
+#   bazelisk run //tools/TermSnapshotFixtures -- "$PWD/protocol/fixtures"
+swift_library(
+    name = "TermSnapshotFixturesLib",
+    testonly = True,
+    srcs = ["main.swift"],
+    module_name = "TermSnapshotFixtures",
+    deps = ["//host/RdevCore:RdevTermCorpus"],
+)
+
+macos_command_line_application(
+    name = "TermSnapshotFixtures",
+    testonly = True,
+    # Its own bundle id: it needs no permission and must not share dev.rdev.host's TCC identity.
+    bundle_id = "dev.rdev.termsnapshotfixtures",
+    minimum_os_version = "26.0",
+    visibility = ["//visibility:public"],
+    deps = [":TermSnapshotFixturesLib"],
+)

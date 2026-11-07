@@ -1,0 +1,199 @@
+    <div id="session">
+    <header id="tabbar">
+      <button id="session-disconnect" type="button" aria-label="Disconnect and return to devices" title="Disconnect">×</button>
+      <!-- The SCROLLING half of the bar. It is its own element so the tab list is CLIPPED where the
+           search group begins, rather than sliding underneath it behind an opaque background: the
+           group is a sibling of this scroller, not an overlay on top of it. -->
+      <div id="tabbar-scroll" class="tabbar-scroll rl-noscroll">
+        <!-- WHILE THE SESSION LOADS (session-skeleton.ts): placeholders where the tabs will be, until the
+             host's first term-list. Hidden here: only a session shows it, so a check that mounts this markup
+             by hand never sees it. -->
+        <div id="tab-skeleton" class="tab-skeleton hidden" aria-hidden="true"><span></span><span></span><span></span></div>
+        <!-- Terminal (session) tabs — driver-only; TerminalTabs renders one button per shell here. -->
+        <div id="term-tabs" class="term-tabs" role="tablist" aria-label="Terminal tabs"></div>
+        <!-- Window tabs — one per subscribed or minimized source; WindowTabs renders here. -->
+        <div id="win-tabs" class="win-tabs" role="tablist" aria-label="Sources"></div>
+        <div id="agent-tabs" class="agent-tabs" role="tablist" aria-label="Agent sessions"></div>
+        <!-- Opens the command palette (new terminal + the window-preview grid) — it is not a direct action. -->
+        <button id="tab-add" type="button" class="tab-add" data-nav-id="add" title="New terminal or window" aria-label="New terminal or window"><span class="native-add-icon" aria-hidden="true"></span></button>
+      </div>
+      <div class="tabbar-right">
+        <!-- One button, two presentations: "Search ⌘K" on desktop, a bare "+" on mobile (where the tab
+             strip's own + is hidden, so this is the single way into the palette). aria-label carries the
+             real name in both, since the visible glyph alone would read as "+". -->
+        <button id="palette-open" type="button" class="palette-open" data-nav-id="palette"
+                aria-label="Search windows or open a new terminal">
+          <span class="palette-open-text">Search</span><kbd aria-label="Command K"><svg class="palette-command" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M5.5 5.5h5v5h-5zM5.5 5.5H3.75A1.75 1.75 0 1 1 5.5 3.75v1.75Zm5 0V3.75a1.75 1.75 0 1 1 1.75 1.75H10.5Zm0 5h1.75a1.75 1.75 0 1 1-1.75 1.75V10.5Zm-5 0v1.75a1.75 1.75 0 1 1-1.75-1.75H5.5Z"/></svg><span>K</span></kbd>
+          <span class="palette-open-plus" aria-hidden="true">+</span>
+        </button>
+      </div>
+    </header>
+
+    <main id="stage">
+      <section id="agents-surface" aria-label="Codex agents" hidden></section>
+      <div id="term-surface">
+        <div id="xterm" class="hidden"></div>
+        <!-- No terminal tabs. Since 2026-09-25 nothing opens a shell implicitly, so an empty pool is a
+             normal state — before a driver's first request, and after it closes the last tab — and
+             this is what the driver sees in it. #xterm stays mounted underneath so the first tab
+             paints into an already-measured grid. -->
+        <div id="term-empty" class="term-empty hidden">
+          <div class="term-empty-content">
+            <svg class="term-empty-art" viewBox="0 0 64 56" fill="none" aria-hidden="true"><rect x="4" y="4" width="56" height="44" rx="9" stroke="currentColor" stroke-width="1.5"/><path d="M5 16h54" stroke="currentColor" stroke-opacity=".35"/><circle cx="12" cy="10" r="1.5" fill="currentColor"/><circle cx="18" cy="10" r="1.5" fill="currentColor"/><path d="m17 26 6 5-6 5m13 0h11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <p class="term-empty-description">Open a terminal or choose a window to get started.</p>
+            <div class="term-empty-actions">
+              <button id="term-empty-new-tmux" type="button" aria-label="New tmux terminal" data-nav-id="term-empty:new-tmux" class="hidden"><svg class="term-empty-key" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="15" height="13" rx="2"/><path d="M7 3h12a2 2 0 0 1 2 2v11M7 11l3 2.5L7 16m6 0h2"/></svg><span>New tmux terminal<small>A background shell that survives app restarts</small></span><span class="term-empty-arrow" aria-hidden="true">↗</span></button>
+              <button id="term-empty-new" type="button" aria-label="New terminal" data-nav-id="term-empty:new"><svg class="term-empty-key" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3m6 0h4"/></svg><span>New terminal<small>A shell that lives in this app</small></span><span class="term-empty-arrow" aria-hidden="true">↗</span></button>
+            </div>
+            <button id="term-empty-browse" type="button" data-nav-id="term-empty:browse">Browse commands <span aria-hidden="true">→</span></button>
+          </div>
+        </div>
+        <!-- Glasses only: there is no hardware keyboard, so a real text field is what opens the
+             on-glasses composer (handwriting + voice) on focus-then-pinch, and the chips carry the
+             control bytes it cannot express. Hidden on every other layout by CSS; inert markup
+             there, which is why it costs the desktop and mobile paths nothing. -->
+        <div id="glasses-compose-bar">
+          <!-- Still a real <input> — only a text control opens the on-glasses composer — but sized and
+               styled as one more chip in the row, because a full-width field wasted the strip. -->
+          <input id="glasses-compose" type="text" data-nav-id="compose"
+                 autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false"
+                 placeholder="Type" aria-label="Write or speak a terminal command" />
+          <div id="glasses-chips">
+            <button type="button" data-nav-id="chip:enter" aria-label="Return">⏎</button>
+            <button type="button" data-nav-id="chip:backspace" aria-label="Backspace">⌫</button>
+            <button type="button" data-nav-id="chip:tab" aria-label="Tab">Tab</button>
+            <button type="button" data-nav-id="chip:esc" aria-label="Escape">Esc</button>
+            <button type="button" data-nav-id="chip:ctrlc" aria-label="Control C">^C</button>
+            <!-- The wearer's physical D-pad moves FOCUS, so these are the only arrow keys the shell
+                 will ever see: without them a TUI, a pager and shell history are all unreachable. -->
+            <button type="button" data-nav-id="chip:up" aria-label="Up">↑</button>
+            <button type="button" data-nav-id="chip:down" aria-label="Down">↓</button>
+            <button type="button" data-nav-id="chip:left" aria-label="Left">←</button>
+            <button type="button" data-nav-id="chip:right" aria-label="Right">→</button>
+          </div>
+        </div>
+        <!-- Touch devices only: a phone or an iPad without a hardware keyboard has no Esc, Tab,
+             Ctrl, Option or arrows, so a shell, a TUI and shell history are all unreachable. Empty
+             here — KeyStrip renders it from TERMINAL_KEYS, so a key with no bytes cannot exist.
+             Revealed by `(any-pointer: coarse)`, NOT by the layout: an iPad in landscape resolves
+             to `floating` and still has no keys. -->
+        <div id="key-strip-term"></div>
+      </div>
+
+      <div id="windows"></div>
+
+      <div id="claim" class="claim-overlay hidden" role="region" aria-labelledby="claim-title" aria-describedby="claim-description">
+        <div class="claim-content">
+          <svg class="claim-symbol" width="72" height="56" viewBox="0 0 72 56" fill="none" aria-hidden="true">
+            <rect class="claim-symbol-device" x="3" y="6" width="40" height="29" rx="4.5"/>
+            <path d="M17 42h12m-6-7v7"/>
+            <path class="claim-symbol-arrow" d="M49 10h7a5 5 0 0 1 5 5v3m-3.5-3.5L61 18l3.5-3.5"/>
+            <rect class="claim-symbol-device" x="51" y="23" width="18" height="30" rx="4.5"/>
+            <path d="M57 48.5h6"/>
+          </svg>
+          <h1 id="claim-title">Your workspace is active elsewhere</h1>
+          <p id="claim-description" class="claim-hint">Move control to this device to continue with your terminals and windows.</p>
+          <button id="claim-button" type="button" data-nav-id="claim">Move here<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 12h15m-6-6 6 6-6 6"/></svg></button>
+        </div>
+      </div>
+
+      <!-- The session's notices, as TOASTS: centred under the tab bar, over the windows and the terminal.
+           They sat beside the search button until 2026-10-02, where a note squeezed the tab strip and was
+           easy to miss. A tap takes one away. -->
+      <div id="toasts" class="toasts">
+        <div id="sim-status-note" class="toast" role="status"></div>
+        <!-- The terminal stream's OWN notice ("not updating", term-resync.ts): a standing state with its
+             own clear, which a transient tmux or source message must neither overwrite nor be erased by. -->
+        <div id="term-stream-note" class="toast" role="status"></div>
+      </div>
+    </main>
+
+    <footer id="statusbar">
+      <span id="status-dot" class="dot" data-state="connecting"></span>
+      <span id="status-cells" class="status-cells"></span>
+      <button id="keyboard-open" type="button" aria-expanded="false" aria-haspopup="dialog" aria-label="Keyboard" title="Keyboard"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M7 16.5h10"/></svg></button>
+      <button type="button" data-motion-slow hidden aria-pressed="false">Slow 10×</button>
+    </footer>
+
+    <div id="palette" class="palette-overlay hidden" role="dialog" aria-modal="true" aria-label="Command palette">
+      <div class="palette-card">
+        <div class="palette-head">
+          <svg class="palette-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4.5 4.5"/></svg>
+          <input id="palette-input" type="text" data-nav-id="palette:input" autocomplete="off" spellcheck="false"
+                 placeholder="Search windows and commands…" aria-label="Command palette" />
+          <button id="palette-close" type="button" data-nav-id="palette:close" title="Close" aria-label="Close">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+          </button>
+        </div>
+        <div class="palette-body">
+          <!-- Why the grid is empty (or, when locked, why it is there but not clickable-through).
+               Above the actions because it explains the whole panel, not one row. -->
+          <div id="palette-notice" class="palette-notice hidden">
+            <strong id="palette-notice-title"></strong>
+            <span id="palette-notice-detail"></span>
+          </div>
+          <div id="palette-actions" class="palette-actions"></div>
+          <div id="palette-tmux-note" class="palette-tmux-note hidden"></div>
+          <h2 class="palette-section-title">Windows &amp; displays</h2>
+          <div id="palette-grid" class="palette-grid" role="listbox"></div>
+          <div id="palette-empty" class="palette-empty hidden">No matches<span>Try a window name or a command.</span></div>
+        </div>
+      </div>
+    </div>
+
+</div><!-- session: display:contents except during the original slide transition -->
+<!-- §11 cannot start without an identity, and `?e2e=1` is what asks for one. Its contents are
+     built by `e2e-setup.ts` — the DECISION is `e2eSetupView`, pure and tested, because §10.1's
+     requirement that the identity be NAMED lives in a line of text. -->
+<dialog id="e2e-setup" class="ss-dialog e2e-setup" aria-label="Sign in with a passkey">
+ <h2 id="e2e-setup-title"></h2>
+ <p id="e2e-setup-body"></p>
+ <code id="e2e-setup-identity" class="e2e-setup-identity" hidden></code>
+ <div id="e2e-setup-actions" class="ss-dialog-actions"></div>
+</dialog>
+<!-- **The Mac's identity changed under this window.** `app://client/` adopts from the shell only when
+     it has NO config and §10.1 forbids an incoming chain replacing one, so without this the window
+     refuses the host's chain forever with `peer-chain` and names neither root. The DECISION and every
+     word are `identity-mismatch.ts`, pure and tested; the two codes are what a person compares, so
+     they are SELECTABLE like every other code in the product. -->
+<dialog id="tmux-kill-dialog" class="ss-dialog" aria-label="Kill this tmux session">
+ <h2>Kill this tmux session?</h2>
+ <p>Every program running in it ends. Closing the tab instead keeps it running.</p>
+ <div class="ss-dialog-actions">
+  <button id="tmux-kill-cancel" type="button" data-nav-id="tmux-kill:cancel">Cancel</button>
+  <button id="tmux-kill-confirm" type="button" data-nav-id="tmux-kill:confirm">Kill session</button>
+ </div>
+</dialog>
+<!-- Several lines pasted into a program NOT in bracketed paste mode each run as they arrive, so the paste
+     asks first (paste-and-drop design §2.4). The words are `paste-ui.ts`'s `MULTILINE_QUESTION`. -->
+<dialog id="paste-lines-dialog" class="ss-dialog" aria-label="Paste several lines">
+ <h2 id="paste-lines-title"></h2>
+ <p id="paste-lines-body"></p>
+ <div class="ss-dialog-actions">
+  <button id="paste-lines-cancel" type="button" data-nav-id="paste-lines:cancel">Cancel</button>
+  <button id="paste-lines-confirm" type="button" data-nav-id="paste-lines:confirm">Paste</button>
+ </div>
+</dialog>
+<!-- A FOLDER copied in Finder and pasted to ANOTHER Mac (the app only; docs/client-web.md, "A folder"): its path
+     on this Mac, or the folder zipped and sent. The words are `paste-local.ts`'s `folderQuestion`. -->
+<dialog id="paste-folder-dialog" class="ss-dialog" aria-label="Paste a folder">
+ <h2 id="paste-folder-title"></h2>
+ <p id="paste-folder-body"></p>
+ <div class="ss-dialog-actions">
+  <button id="paste-folder-cancel" type="button" data-nav-id="paste-folder:cancel">Cancel</button>
+  <button id="paste-folder-path" type="button" data-nav-id="paste-folder:path">Paste the path</button>
+  <button id="paste-folder-send" type="button" data-nav-id="paste-folder:send">Compress and send</button>
+ </div>
+</dialog>
+<dialog id="identity-mismatch" class="ss-dialog" aria-label="This window is signed in to a different identity">
+ <h2 id="identity-mismatch-title"></h2>
+ <p id="identity-mismatch-body"></p>
+ <dl class="identity-compare">
+  <dt id="identity-mismatch-window-label"></dt><dd><code id="identity-mismatch-window" class="identity-compare-code"></code></dd>
+  <dt id="identity-mismatch-mac-label"></dt><dd><code id="identity-mismatch-mac" class="identity-compare-code"></code></dd>
+ </dl>
+ <div class="ss-dialog-actions">
+  <button type="button" data-identity-mismatch-cancel></button>
+  <button type="button" data-identity-mismatch-confirm></button>
+ </div>
+</dialog>

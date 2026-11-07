@@ -1,0 +1,4 @@
+load("@rules_swift//swift:swift.bzl", "swift_library", "swift_binary", "swift_test")
+swift_library(name="UpdateInstaller",module_name="UpdateInstaller",srcs=["Installer.swift"],deps=["//app:ShellstormCore"],visibility=["//visibility:public"])
+swift_binary(name="XpromptvsUpdate",srcs=["main.swift"],deps=[":UpdateInstaller","//app:ShellstormCore","//host/RdevCore:RdevCore"],visibility=["//visibility:public"])
+swift_test(name="InstallerTests",srcs=["InstallerTests.swift"],deps=[":UpdateInstaller","//app:ShellstormCore"])

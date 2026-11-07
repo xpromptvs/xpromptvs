@@ -1,0 +1,172 @@
+[
+  {
+    "name": "sgr-torture",
+    "cols": 80,
+    "rows": 24
+  },
+  {
+    "name": "wide-cjk",
+    "cols": 40,
+    "rows": 10
+  },
+  {
+    "name": "wrapped-lines",
+    "cols": 80,
+    "rows": 24
+  },
+  {
+    "name": "scroll-region-origin",
+    "cols": 80,
+    "rows": 24
+  },
+  {
+    "name": "alt-screen-vim",
+    "cols": 80,
+    "rows": 24
+  },
+  {
+    "name": "less-like",
+    "cols": 80,
+    "rows": 24
+  },
+  {
+    "name": "htop-like",
+    "cols": 100,
+    "rows": 30
+  },
+  {
+    "name": "claude-like-tui",
+    "cols": 100,
+    "rows": 30
+  },
+  {
+    "name": "charsets",
+    "cols": 80,
+    "rows": 24
+  },
+  {
+    "name": "tab-stops",
+    "cols": 80,
+    "rows": 24
+  },
+  {
+    "name": "mouse-modes",
+    "cols": 80,
+    "rows": 24
+  },
+  {
+    "name": "bracketed-insert-nowrap",
+    "cols": 80,
+    "rows": 24
+  },
+  {
+    "name": "pending-wrap",
+    "cols": 20,
+    "rows": 5
+  },
+  {
+    "name": "scrollback-overflow",
+    "cols": 40,
+    "rows": 10
+  },
+  {
+    "name": "sync-open",
+    "cols": 80,
+    "rows": 24
+  },
+  {
+    "name": "cursor-style",
+    "cols": 80,
+    "rows": 24
+  },
+  {
+    "name": "wrapped-erased-start",
+    "cols": 20,
+    "rows": 8
+  },
+  {
+    "name": "pending-wrap-dec-saved",
+    "cols": 20,
+    "rows": 5
+  },
+  {
+    "name": "pending-wrap-dec-active",
+    "cols": 20,
+    "rows": 5
+  },
+  {
+    "name": "alt-saved-cursor-bg",
+    "cols": 40,
+    "rows": 10
+  },
+  {
+    "name": "short-then-wrapped",
+    "cols": 20,
+    "rows": 10
+  },
+  {
+    "name": "continuation-bg",
+    "cols": 20,
+    "rows": 6
+  },
+  {
+    "name": "decsc-pending-wrap",
+    "cols": 20,
+    "rows": 5
+  },
+  {
+    "name": "pending-wrap-erased-row",
+    "cols": 20,
+    "rows": 5
+  },
+  {
+    "name": "decsc-pending-wrap-erased-row",
+    "cols": 20,
+    "rows": 5
+  },
+  {
+    "name": "ich-dch-gaps",
+    "cols": 30,
+    "rows": 8
+  },
+  {
+    "name": "alt-screen-reentry",
+    "cols": 40,
+    "rows": 10
+  },
+  {
+    "name": "recycled-wrapped-line",
+    "cols": 20,
+    "rows": 5
+  },
+  {
+    "name": "emoji-widths",
+    "cols": 40,
+    "rows": 12
+  },
+  {
+    "name": "emoji-split",
+    "cols": 40,
+    "rows": 5
+  },
+  {
+    "name": "emoji-margin",
+    "cols": 20,
+    "rows": 6
+  },
+  {
+    "name": "emoji-margin-skin-tone",
+    "cols": 20,
+    "rows": 4
+  },
+  {
+    "name": "grapheme-joins",
+    "cols": 80,
+    "rows": 40
+  },
+  {
+    "name": "c1-controls",
+    "cols": 40,
+    "rows": 10
+  }
+]

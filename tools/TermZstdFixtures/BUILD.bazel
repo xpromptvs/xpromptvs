@@ -1,0 +1,20 @@
+load("@rules_apple//apple:macos.bzl", "macos_command_line_application")
+load("@rules_swift//swift:swift.bzl", "swift_library")
+
+swift_library(
+    name = "TermZstdFixturesLib",
+    testonly = True,
+    srcs = ["main.swift", "Measure.swift"],
+    module_name = "TermZstdFixtures",
+    deps = ["//host/RdevCore:RdevTermCorpus", "//host/RdevCore:RdevCore", "//third_party/zstd:Zstd"],
+)
+
+macos_command_line_application(
+    name = "TermZstdFixtures",
+    testonly = True,
+    # Its own bundle id: it needs no permission and must not share dev.rdev.host's TCC identity.
+    bundle_id = "dev.rdev.termzstdfixtures",
+    minimum_os_version = "26.0",
+    visibility = ["//visibility:public"],
+    deps = [":TermZstdFixturesLib"],
+)

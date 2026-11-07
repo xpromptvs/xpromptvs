@@ -1,0 +1,52 @@
+{
+  "built": [
+    {"call": "begin", "args": {"id": "p1", "to": {"term": "pty:3"}, "items": [{"kind": "file", "name": "IMG_0042.jpg", "type": "image/jpeg", "size": 3145728}]},
+     "wire": {"t": "paste-begin", "id": "p1", "to": {"term": "pty:3"}, "items": [{"kind": "file", "name": "IMG_0042.jpg", "type": "image/jpeg", "size": 3145728}]}},
+    {"call": "begin", "args": {"id": "p2", "to": {"win": "win:4711"}, "items": [{"kind": "text", "size": 12}]},
+     "wire": {"t": "paste-begin", "id": "p2", "to": {"win": "win:4711"}, "items": [{"kind": "text", "size": 12}]}},
+    {"call": "begin", "args": {"id": "p3", "to": {"win": "win:4711"}, "at": {"x": 0.42, "y": 0.17}, "items": [{"kind": "file", "name": "a.png", "type": "image/png", "size": 10}, {"kind": "file", "name": "notes v2.pdf", "type": "application/pdf", "size": 20}]},
+     "wire": {"t": "paste-begin", "id": "p3", "to": {"win": "win:4711"}, "at": {"x": 0.42, "y": 0.17}, "items": [{"kind": "file", "name": "a.png", "type": "image/png", "size": 10}, {"kind": "file", "name": "notes v2.pdf", "type": "application/pdf", "size": 20}]}},
+    {"call": "begin", "args": {"id": "p_4-x", "to": {"win": "dsp:1"}, "items": [{"kind": "file", "name": "pasted.png", "type": "image/png", "size": 5}]},
+     "wire": {"t": "paste-begin", "id": "p_4-x", "to": {"win": "dsp:1"}, "items": [{"kind": "file", "name": "pasted.png", "type": "image/png", "size": 5}]}},
+    {"call": "begin", "args": {"id": "p5", "to": {"term": "tmux:$2"}, "items": [{"kind": "file", "name": "", "type": "", "size": 1}]},
+     "wire": {"t": "paste-begin", "id": "p5", "to": {"term": "tmux:$2"}, "items": [{"kind": "file", "name": "", "type": "", "size": 1}]}},
+    {"call": "data", "args": {"id": "p1", "item": 0, "seq": 0, "bytes": [104, 105]},
+     "wire": {"t": "paste-data", "id": "p1", "item": 0, "seq": 0, "data": "aGk="}},
+    {"call": "end", "args": {"id": "p1"}, "wire": {"t": "paste-end", "id": "p1"}},
+    {"call": "cancel", "args": {"id": "p1"}, "wire": {"t": "paste-cancel", "id": "p1"}}
+  ],
+  "tooLarge": [
+    {"t": "paste-begin", "id": "big1", "to": {"term": "pty:1"}, "items": [{"kind": "file", "name": "a", "type": "", "size": 1073741825}]},
+    {"t": "paste-begin", "id": "big2", "to": {"win": "win:1"}, "items": [{"kind": "text", "size": 4194305}]},
+    {"t": "paste-begin", "id": "big3", "to": {"term": "pty:1"}, "items": [{"kind": "file", "name": "a", "type": "", "size": 419430400}, {"kind": "file", "name": "b", "type": "", "size": 419430400}, {"kind": "file", "name": "c", "type": "", "size": 419430400}]}
+  ],
+  "malformed": [
+    {"t": "paste-begin", "id": "", "to": {"term": "pty:1"}, "items": [{"kind": "file", "name": "a", "type": "", "size": 1}]},
+    {"t": "paste-begin", "id": "has space", "to": {"term": "pty:1"}, "items": [{"kind": "file", "name": "a", "type": "", "size": 1}]},
+    {"t": "paste-begin", "id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "to": {"term": "pty:1"}, "items": [{"kind": "file", "name": "a", "type": "", "size": 1}]},
+    {"t": "paste-begin", "id": "m1", "to": {}, "items": [{"kind": "file", "name": "a", "type": "", "size": 1}]},
+    {"t": "paste-begin", "id": "m2", "to": {"term": "pty:0"}, "items": [{"kind": "file", "name": "a", "type": "", "size": 1}]},
+    {"t": "paste-begin", "id": "m3", "to": {"term": "3"}, "items": [{"kind": "file", "name": "a", "type": "", "size": 1}]},
+    {"t": "paste-begin", "id": "m4", "to": {"win": "sim:1"}, "items": [{"kind": "file", "name": "a", "type": "", "size": 1}]},
+    {"t": "paste-begin", "id": "m5", "to": {"term": "pty:1", "win": "win:1"}, "items": [{"kind": "file", "name": "a", "type": "", "size": 1}]},
+    {"t": "paste-begin", "id": "m6", "to": {"term": "pty:1"}, "items": []},
+    {"t": "paste-begin", "id": "m7", "to": {"term": "pty:1"}, "items": [{"kind": "file", "name": "a", "type": "", "size": 0}]},
+    {"t": "paste-begin", "id": "m8", "to": {"term": "pty:1"}, "items": [{"kind": "file", "name": "a", "type": "", "size": -1}]},
+    {"t": "paste-begin", "id": "m9", "to": {"term": "pty:1"}, "items": [{"kind": "file", "name": "a", "type": "", "size": 1.5}]},
+    {"t": "paste-begin", "id": "m10", "to": {"term": "pty:1"}, "items": [{"kind": "dir", "name": "a", "type": "", "size": 1}]},
+    {"t": "paste-begin", "id": "m11", "to": {"term": "pty:1"}, "items": [{"kind": "file", "name": "a", "size": 1}]},
+    {"t": "paste-begin", "id": "m12", "to": {"term": "pty:1"}, "items": [{"kind": "text", "size": 3}]},
+    {"t": "paste-begin", "id": "m13", "to": {"win": "win:1"}, "items": [{"kind": "text", "size": 3}, {"kind": "file", "name": "a", "type": "", "size": 1}]},
+    {"t": "paste-begin", "id": "m14", "to": {"win": "win:1"}, "items": [{"kind": "text", "size": 3}, {"kind": "text", "size": 3}]},
+    {"t": "paste-begin", "id": "m15", "to": {"term": "pty:1"}, "at": {"x": 0.5, "y": 0.5}, "items": [{"kind": "file", "name": "a", "type": "", "size": 1}]},
+    {"t": "paste-begin", "id": "m16", "to": {"win": "win:1"}, "at": {"x": 1.5, "y": 0.5}, "items": [{"kind": "file", "name": "a", "type": "", "size": 1}]},
+    {"t": "paste-begin", "id": "m17", "to": {"win": "win:1"}, "at": {"x": 0.5}, "items": [{"kind": "file", "name": "a", "type": "", "size": 1}]},
+    {"t": "paste-data", "id": "p1", "item": 0, "seq": 0, "data": "!!"},
+    {"t": "paste-data", "id": "p1", "item": 0, "seq": 0, "data": ""},
+    {"t": "paste-data", "id": "p1", "item": 0, "seq": -1, "data": "aGk="},
+    {"t": "paste-data", "id": "p1", "item": 32, "seq": 0, "data": "aGk="},
+    {"t": "paste-data", "id": "p1", "item": 0, "data": "aGk="},
+    {"t": "paste-end"},
+    {"t": "paste-cancel", "id": ""}
+  ]
+}

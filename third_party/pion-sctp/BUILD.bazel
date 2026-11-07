@@ -1,0 +1,3 @@
+# abandon-on-loss.patch is applied to github.com/pion/sctp by go_deps.module_override in
+# MODULE.bazel; its header says why. This package exists so that label resolves.
+exports_files(["abandon-on-loss.patch"])

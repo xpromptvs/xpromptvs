@@ -1,0 +1,633 @@
+/* Xpromptvs's shared home/sharing language. Session geometry stays in client/style.css. */
+@font-face { font-family: 'DM Sans'; font-style: normal; font-weight: 100 1000; font-display: swap; src: url('./dm-sans.ttf') format('truetype'); }
+:root {
+  --font-ui: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --app-bg: var(--terminal-background, #181817); --bg: var(--terminal-background, #181817); --surface: #292927; --surface2: #353533;
+  --surface3: #40403c; --tabbar: var(--panel-background, #292829); --titlebar: var(--panel-background, #292829); --tab-on: #353533;
+  --text: #ffffff; --muted: #b7b7b1; --faint: #969690;
+  --border: #383836; --border2: #51514d; --accent: #a4d9e0; --accent-text: #ffffff;
+  --accent-dim: #a4d9e014; --red: #f18e8e; --warn: #e5dda8;
+  --scrim: #0008; --shadow: 0 24px 64px #0005; --motion-scale: 1;
+  color-scheme: dark;
+}
+:root[data-theme='light'] {
+  --app-bg: #f3f3ee; --bg: #f3f3ee; --surface: #ffffff; --surface2: #e9e9e2;
+  --surface3: #ddded5; --tabbar: var(--panel-background, #e7e8e1); --titlebar: var(--panel-background, #e7e8e1); --tab-on: #fff;
+  --text: #252623; --muted: #5d6059; --faint: #696d65;
+  --border: #d5d7ce; --border2: #a5aaa0; --accent: #326c75; --accent-text: #252623;
+  --accent-dim: #326c7514; --red: #b33131; --warn: #7d620d;
+  --scrim: #20251d55; --shadow: 0 20px 50px #18201020;
+  color-scheme: light;
+}
+.ss-home, .ss-dialog { font: 15px/1.5 var(--font-ui); color: var(--text); }
+.ss-home *, .ss-dialog * { box-sizing: border-box; }
+.ss-home [hidden], .ss-dialog [hidden], [data-motion-slow][hidden] { display: none !important; }
+.ss-home button, .ss-home input, .ss-home select, .ss-dialog button, .ss-dialog input, .ss-dialog select { font: inherit; color: inherit; }
+.ss-home button, .ss-dialog button { cursor: pointer; }
+.ss-home button:disabled, .ss-dialog button:disabled { cursor: default; opacity: .5; }
+.ss-home button, .ss-dialog button { min-height: 40px; border: 1px solid var(--border2); border-radius: 7px; background: var(--surface2); padding: 7px 16px; }
+.ss-home button:hover:not(:disabled), .ss-dialog button:hover:not(:disabled) { background: var(--surface3); }
+/* Destructive actions say so in ink, not in a glyph — the subsets carry no dingbats. */
+.ss-home button.danger, .ss-dialog button.danger { color: var(--red); border-color: var(--red); }
+.ss-home button.danger:hover:not(:disabled), .ss-dialog button.danger:hover:not(:disabled) { background: var(--surface3); }
+/* The identity block in Settings: the root id is long, monospaced and SELECTABLE, because §10.1
+   asks a person to compare it against a device they already trust. */
+.ss-settings-identity { display: flex; flex-direction: column; gap: 10px; margin: 0 0 22px; }
+.ss-settings-identity h2 { margin: 0; font-size: 16px; }
+.ss-settings-identity p { margin: 0; color: var(--muted); font-size: 14px; }
+.ss-settings-identity .e2e-setup-actions { justify-content: flex-start; }
+.ss-home :is(input,select), .ss-dialog :is(input,select) { min-width: 0; padding: 10px 12px; background: var(--surface); border: 1px solid var(--border2); border-radius: 7px; user-select: text; }
+/* **NO FOCUS RING ANYWHERE BUT THE GLASS.** Asked for directly, 2026-09-14. It is turned OFF rather
+   than left unstyled, because unstyled means the browser's own ring comes back — "remove it" is a
+   rule about what is painted, not about which stylesheet paints it.
+
+   The exception is the see-through display, and it is not an oversight: there is no pointer on the
+   glasses, so focus IS the selection model (`docs/glasses.md`) — a D-pad moves it and a pinch fires
+   it. A wearer who cannot see where focus is cannot use the product at all. That rule lives in
+   `style.css` beside the rest of the glasses layer and wins on specificity.
+
+   **The cost is real and is the user's to carry:** `:focus-visible` shows only for keyboard and
+   assistive navigation, never for a mouse click, so this takes nothing from pointer users and takes
+   the only positional cue keyboard users have. */
+:root:not([data-layout="glasses"]) :focus,
+:root:not([data-layout="glasses"]) :focus-visible { outline: none; }
+.ss-header { display: flex; align-items: center; gap: 32px; min-height: 64px; padding: max(12px,env(safe-area-inset-top)) max(32px,env(safe-area-inset-right)) 12px max(32px,env(safe-area-inset-left)); border-bottom: 1px solid var(--border); background: var(--tabbar); }
+.ss-brand { display: inline-flex; align-items: center; gap: 9px; color: var(--text); font-weight: 600; text-decoration: none; white-space: nowrap; letter-spacing: -.3px; }
+.ss-brand-word { letter-spacing: -.4px; }
+.ss-mark { width: 29px; height: 29px; flex: none; }
+.ss-nav { display: flex; align-self: stretch; gap: 22px; }
+.ss-home .ss-nav button { border: 0; border-radius: 0; background: none; position: relative; padding: 0 3px; color: var(--muted); }
+.ss-home .ss-nav button[aria-current='page'] { color: var(--text); }
+.ss-header-actions { margin-left: auto; display: flex; gap: 10px; align-items: center; }
+/* EACH SIDE PAYS ITS OWN INSET, at every width (2026-10-04) — for a page that is not the dashboard; the
+   dashboard's own `.ss-home .ss-content` below outranks it. On a desktop the insets are 0: the 32 px it was. */
+.ss-content { width: min(100%,800px); margin: 0 auto; padding: 40px max(32px,env(safe-area-inset-right)) max(48px,env(safe-area-inset-bottom)) max(32px,env(safe-area-inset-left)); }
+.ss-intro { margin: 0 0 32px; }
+.ss-intro h1 { display: flex; align-items: center; gap: 14px; font-size: 30px; font-weight: 600; line-height: 1.2; letter-spacing: -.8px; margin: 0 0 8px; }
+.ss-intro .ss-mark { width: 36px; height: 36px; }
+.ss-intro p { color: var(--muted); margin: 0; }
+.ss-quick { display: flex; gap: 8px; align-items: center; padding: 7px; margin: 0; border: 1px solid var(--border); border-radius: 10px; background: var(--tabbar); }
+.ss-home .ss-quick input { flex: 1; width: 100%; border: 0; box-shadow: none; background: none; padding: 9px 12px; outline: none; text-align: left; }
+.ss-home .ss-quick button { width: auto; flex: none; font-weight: 400; background: var(--surface3); color: var(--text); border: 1px solid var(--border2); border-radius: 7px; padding: 9px 16px; }
+.ss-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 0 0 12px; }
+.ss-section-heading h2 { font-size: 14px; font-weight: 600; margin: 0; }
+.ss-count { font-size: 13px; color: var(--muted); margin-left: 6px; font-weight: 400; }
+.ss-home .ss-text-action { border: 0; background: none; color: var(--muted); padding: 5px 0; text-decoration: none; }
+.ss-home .ss-text-action:hover { color: var(--text); background: none; }
+.ss-device-list { display: flex; flex-direction: column; }
+.ss-device { display: flex; align-items: center; gap: 14px; min-height: 82px; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+.ss-device-icon { display: grid; place-items: center; width: 46px; flex: none; color: var(--muted); }
+.ss-device-icon svg { width: 34px; height: 34px; stroke: currentColor; stroke-width: 1.5; fill: none; }
+.ss-device-copy { flex: 1; min-width: 0; }
+.ss-device-name { display: block; font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
+.ss-device-state { display: block; font-size: 13px; color: var(--muted); margin-top: 2px; }
+.ss-device-actions { flex: none; display: flex; gap: 8px; }
+.ss-empty { padding: 28px 24px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+.ss-empty h3 { font: 500 18px/1.4 var(--font-ui); margin: 0 0 8px; }
+.ss-empty p { color: var(--muted); font-size: 16px; margin: 0 0 18px; max-width: 570px; }
+.ss-error { color: var(--red); font-size: 15px; text-align: left; margin: 12px 0; }
+.ss-settings { max-width: 700px; }
+.ss-settings h1 { font-size: 32px; font-weight: 500; letter-spacing: -.6px; }
+.ss-settings-row { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 21px 0; border-bottom: 1px solid var(--border); }
+.ss-settings-row small { display: block; font-size: 14px; color: var(--muted); margin-top: 5px; }
+.ss-settings-row input[type=checkbox] { width: 19px; height: 19px; accent-color: var(--accent); }
+.ss-settings-note { font-size: 14px; color: var(--muted); margin-top: 24px; }
+.ss-dialog { width: min(440px,calc(100% - 32px)); max-height: calc(100dvh - 48px); overflow: auto; padding: 20px; border: 1px solid #ffffff0b; border-radius: 12px; background: var(--settings-canvas, #181817); color: #dedee0; font: 400 13px/1.5 -apple-system, BlinkMacSystemFont, system-ui, sans-serif; box-shadow: 0 16px 48px #0006; }
+.ss-dialog::backdrop { background: var(--scrim); }
+.ss-dialog h2 { font: 600 14px/20px -apple-system, BlinkMacSystemFont, system-ui, sans-serif; margin: 0 0 8px; }
+.ss-dialog p { margin: 0 0 12px; font-size: 13px; line-height: 1.5; color: var(--muted); }
+/* `align-items: center`, not the default `stretch`: a dialog's buttons are a row of buttons, and a
+   stray margin on one of them must not make its neighbour taller. */
+.ss-dialog-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+
+.ss-connect-label { display: inline-flex; align-items: center; justify-content: center; padding: 7px 16px; min-width: 105px; border: 1px solid var(--border2); border-radius: 7px; background: var(--surface2); flex: none; }
+.ss-home .ss-device-message { font-size: 16px; color: var(--muted); padding: 12px 0; }
+.ss-home #welcome-device-link:not(.hidden), .ss-home #welcome-link-approve:not(.hidden) { padding: 26px; margin-top: 20px; border: 1px solid var(--border2); border-radius: 12px; background: var(--surface); display: flex; flex-direction: column; gap: 16px; }
+.ss-home .device-link-where { overflow-wrap: anywhere; }
+/* The profile button and its menu — `web/src/shared/profile-menu.ts`, both dashboards. There is no
+   account behind it: "who you are" is §10.1's root, as the code a person reads. */
+.ss-profile { position: relative; display: flex; flex: none; }
+/* `.ss-home button` above is (0,1,1) and sets `min-height: 40px; border-radius: 7px; padding: 7px
+   16px` — a round 34px button loses to it on specificity alone, which is how this first rendered as
+   a 34x40 rounded rectangle with the glyph spilling out of it. */
+.ss-home .ss-profile-button { display: grid; place-items: center; flex: none; width: 34px; height: 34px; min-height: 34px; padding: 0; border: 1px solid var(--border2); border-radius: 50%; background: var(--surface2); color: var(--muted); }
+.ss-home .ss-profile-button:hover:not(:disabled) { color: var(--text); background: var(--surface3); }
+.ss-profile-button svg { width: 19px; height: 19px; stroke: currentColor; stroke-width: 1.7; fill: none; stroke-linecap: round; }
+.ss-home .ss-profile-button[aria-expanded=true] { color: var(--text); border-color: var(--accent); }
+/* A MODAL `<dialog>`, like every other alert here — `showModal()` puts it in the top layer, so it
+   needs no z-index and carries a backdrop, focus containment and Escape for free. It wears
+   `.ss-dialog` and only adds the identity block. */
+.ss-profile-dialog p { margin: 0 0 12px; }
+/* The same size as a Connect button — `.ss-connect-label` above. Height, padding, radius and font
+   already matched through `.ss-home button`; the width did not. The sign-out confirmation's two
+   buttons are the same size for the same reason: it is the same pair of answers. */
+#profile-dialog-actions button, #sign-out-dialog .ss-dialog-actions button { min-width: 0; }
+/* SELECTABLE and never truncated: §10.1 asks a person to compare this against another device, and a
+   name they cannot copy is not one they can check. Same bargain `.e2e-setup-identity` makes. */
+.ss-profile-identity { display: block; font-family: var(--font-mono, ui-monospace, monospace); font-size: 15px; line-height: 1.5; letter-spacing: .06em; word-break: break-all; user-select: text; padding: 11px 13px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); }
+/* ADD DEVICE (`web/src/shared/add-device.ts`, both dashboards): the quick-connect field's look, inside a dialog —
+   the page's own rules are scoped to `#home-input`/`#home-scan`, so the Scan button here was an empty grey box. */
+.ss-add-device .ss-quick { min-height: 56px; padding: 6px; gap: 4px; margin: 4px 0 0; border: 1px solid var(--border); border-radius: 12px; background: var(--tabbar); }
+.ss-add-device #add-device-code { flex: 1 1 0; width: 0; min-width: 0; min-height: 42px; padding: 9px 10px; border: 0; border-radius: 0; background: transparent; outline: none; text-align: left; font: 400 15px var(--font-mono, ui-monospace, monospace); letter-spacing: .02em; }
+.ss-add-device #add-device-code::placeholder { color: var(--faint); opacity: 1; font-family: var(--font-ui); letter-spacing: 0; }
+.ss-add-device #add-device-scan { display: grid; place-items: center; width: 40px; height: 42px; min-height: 42px; flex: none; padding: 0; border: 0; border-radius: 8px; background: transparent; color: var(--muted); }
+.ss-add-device #add-device-scan svg { width: 20px; height: 20px; }
+.ss-add-device #add-device-scan:hover { color: var(--text); background: #ffffff06; }
+.ss-add-device #add-device-error { margin: 12px 0 0; font-size: 15px; color: var(--red); }   /* `.ss-dialog p` outranks `.ss-error` */
+.ss-add-device .ss-profile-identity { margin-top: 4px; }
+.ss-add-device .ss-dialog-actions button { min-width: 0; }
+[data-motion-slow] { font: 12px var(--font-ui) !important; padding: 5px 8px !important; min-height: 28px !important; color: var(--muted); background: var(--surface); border: 1px solid var(--border2); border-radius: 5px; }
+[data-motion-slow][aria-pressed=true] { color: var(--accent); border-color: var(--accent); }
+.ss-home .ss-device[aria-busy=true] .ss-device-icon { color: var(--accent); }
+@media(max-width:700px) {
+ .ss-header { padding: max(13px,env(safe-area-inset-top)) max(17px,env(safe-area-inset-right)) 13px max(17px,env(safe-area-inset-left)); flex-wrap: wrap; gap: 13px 20px; }
+ .ss-nav { order: 3; width: 100%; gap: 22px; min-height: 34px; }
+ .ss-content { padding: 28px max(17px,env(safe-area-inset-right)) max(32px,env(safe-area-inset-bottom)) max(17px,env(safe-area-inset-left)); }
+ .ss-intro { margin: 15px 0 27px; }
+ .ss-intro h1 { font-size: 32px; flex-wrap: wrap; gap: 10px; }
+ .ss-quick { gap: 4px; padding: 6px; }
+ .ss-home .ss-quick input { padding: 8px; font-size: 16px; }
+ .ss-home .ss-quick button { padding: 8px 10px; font-size: 16px; }
+ .ss-device { gap: 12px; }
+ .ss-device-icon { width: 32px; }
+ .ss-device-icon svg { width: 28px; }
+ .ss-device-state { font-size: 14px; }
+ .ss-home .ss-device-actions button, .ss-connect-label { font-size: 16px; min-width: 0; padding: 8px 12px; }
+ .ss-settings-row { gap: 12px; }
+}
+@media(prefers-reduced-motion:reduce) { *,*::before,*::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+
+
+/* Match ShellStorm: the shell/header never scroll; each page owns its scroll position. */
+.ss-home {display:flex;flex-direction:column;overflow:hidden;min-height:0}
+.ss-header {flex-shrink:0;position:relative;z-index:10}
+.ss-page-scroll {flex:1 1 auto;min-height:0;width:100%;overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;background:var(--app-bg);scrollbar-gutter:stable}
+.ss-page-scroll > .ss-content {display:flow-root}
+
+.ss-heading-label { display: flex; align-items: center; gap: 14px; }
+
+/* Text actions and header navigation use ink changes, without hover fills. */
+.ss-home .ss-header button:hover:not(:disabled),
+.ss-home .ss-text-action:hover:not(:disabled) { background: transparent; color: var(--text); }
+
+
+/* --- the QR scanner sheet ------------------------------------------------------------------
+   Full-bleed and above everything while it is up. `z-index: 100` matches `#palette`, because this
+   is the same class of surface: a modal thing that owns the viewport until it is dismissed. */
+.qr-sheet {
+  position: fixed; inset: 0; z-index: 100;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 12px;
+  padding: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
+  background: var(--app-bg); color: var(--text);
+}
+.qr-sheet h2 { font: 600 17px/1.3 var(--font-ui); margin: 0; }
+.qr-sheet p { color: var(--muted); max-width: 34ch; text-align: center; margin: 0; }
+/* `object-fit: cover` so a portrait phone fills the frame rather than letterboxing the subject —
+   a QR held at arm's length is small enough already. */
+.qr-sheet video {
+  width: min(100%, 420px); aspect-ratio: 1; object-fit: cover;
+  border-radius: 15px; background: var(--surface2);
+}
+.qr-sheet-actions { display: flex; gap: 8px; }
+
+/* Shared Macs utility: quiet groups and immediate, stable connection copy. */
+.ss-devices-section { margin-bottom: 28px; }
+.ss-connect-section { margin-bottom: 28px; }
+.ss-connect-section h2 { font-size: 13px; font-weight: 500; color: var(--muted); margin: 0 0 10px; }
+.ss-devices-section .ss-device-list { background: #ffffff03; }
+.ss-devices-section .ss-device-list .ss-device:last-child { border-bottom: 0; }
+.ss-devices-section #home-this-mac:not([hidden]) { border-radius: 12px 12px 0 0; border-bottom: 1px solid var(--border); }
+.ss-devices-section #home-device-list { border-radius: 12px; }
+.ss-devices-section:has(#home-this-mac:not([hidden])) #home-device-list { border-radius: 0 0 12px 12px; }
+.ss-home .ss-device-message { padding: 20px; margin: 0; font-size: 14px; }
+.ss-home .device-list-action { margin: 0 20px 20px; align-self: flex-start; }
+.ss-home .ss-quick-status { margin: 10px 0 0; font-size: 13px; }
+.ss-home .ss-profile-button { background: transparent; border-color: transparent; }
+.ss-home #home-refresh button { font-size: 12px; }
+.ss-home .ss-device-actions button { font-size: 14px; border-color: #ffffff0c; background: #ffffff0a; }
+.ss-home #home-lead > .ss-section-heading { padding-top: 20px; border-top: 1px solid var(--border); gap: 20px; }
+.ss-home #home-lead .ss-device-state { font-size: 13px; max-width: 240px; }
+.ss-home #home-lead button { font-size: 13px; flex: none; }
+[data-dashboard-surface="mac"] #home-devices .ss-intro { display: none; }
+[data-dashboard-surface="mac"] .ss-content { padding: 28px 24px; }
+[data-dashboard-surface="mac"] .ss-header { padding-left: var(--native-left-grip); padding-right: var(--native-right-grip); }
+[data-dashboard-surface="mac"] .ss-brand { display: none; }
+[data-dashboard-surface="mac"] .ss-nav { order: initial; width: auto; margin-left: 0; }
+
+[data-dashboard-surface="mac"] .ss-settings h1 { margin: 0 0 16px; font-size: 24px; }
+[data-dashboard-surface="mac"] .ss-settings-row { font-size: 14px; padding: 16px 0; }
+[data-dashboard-surface="mac"] .ss-settings-row small { font-size: 12px; }
+@media(max-width: 520px) {
+  .ss-device { padding: 14px 12px; }
+  .ss-devices-section { margin-bottom: 24px; }
+}
+[data-dashboard-surface="mac"] .ss-device { min-height: 72px; padding-top: 12px; padding-bottom: 12px; }
+.ss-home .ss-device .row-connect { min-height: 36px; font-size: 14px; border-color: #ffffff12; background: #ffffff0a; }
+.ss-home .ss-device-state:not(.offline) { color: var(--muted); }
+
+/* Dashboard navigation uses the session's integrated tab silhouette and optical spacing. */
+.ss-home .ss-header {
+  height: var(--native-bar-height, 45px); min-height: var(--native-bar-height, 45px);
+  padding-top: 0; padding-bottom: 0; gap: 24px; flex-wrap: nowrap;
+  border-bottom: 0; background: var(--tabbar);
+}
+.ss-home .ss-nav { align-self: stretch; align-items: flex-end; gap: 8px; min-height: 0; }
+.ss-home .ss-nav button {
+  --dashboard-tab-fill: transparent;
+  height: calc(var(--native-bar-height, 45px) - 4px); min-height: 0;
+  padding: 3px 16px 6px; border-radius: 8px 8px 0 0;
+  font-size: 14px; font-weight: 500; background: var(--dashboard-tab-fill);
+}
+.ss-home .ss-nav button[aria-current=page] { --dashboard-tab-fill: var(--app-bg); color: var(--text); }
+.ss-home .ss-header .ss-nav button:hover { background: var(--dashboard-tab-fill); }
+.ss-home .ss-nav button::after {
+  content: ""; position: absolute; left: -6px; right: -6px; bottom: 0; height: 6px;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 0 0, transparent 5.5px, var(--dashboard-tab-fill) 6px) left bottom / 6px 6px no-repeat,
+    radial-gradient(circle at 100% 0, transparent 5.5px, var(--dashboard-tab-fill) 6px) right bottom / 6px 6px no-repeat;
+}
+.ss-home .ss-header-actions { gap: 8px; padding-bottom: 0; }
+.ss-home .ss-profile-button { width: 32px; height: 32px; min-height: 32px; border: 0; border-radius: 8px; }
+.ss-home .ss-profile-button svg { width: 20px; height: 20px; }
+.ss-home .ss-brand { font-size: 14px; gap: 7px; }
+.ss-home .ss-brand .ss-mark { width: 22px; height: 22px; }
+@media(max-width:700px) {
+  .ss-home:not([data-dashboard-surface="mac"]) .ss-header { gap: 12px; }
+  .ss-home:not([data-dashboard-surface="mac"]) .ss-brand-word { display: none; }
+  .ss-home .ss-nav { order: initial; width: auto; }
+  .ss-home .ss-nav button { padding-left: 12px; padding-right: 12px; }
+}
+@media (any-pointer: coarse) {
+  .ss-home:not([data-dashboard-surface="mac"]) .ss-header {
+    padding-top: env(safe-area-inset-top, 0px);
+    height: calc(var(--native-bar-height, 45px) + env(safe-area-inset-top, 0px));
+    min-height: calc(var(--native-bar-height, 45px) + env(safe-area-inset-top, 0px));
+  }
+}
+
+/* Dashboard contents share Window Settings' canvas, grouped rows, and system typography. */
+.ss-home {
+  --settings-canvas: var(--terminal-background, #181817); --settings-row: #2a2a2c; --settings-separator: #ffffff0b;
+  --app-bg: var(--settings-canvas);
+}
+.ss-home .ss-page-scroll { background: var(--settings-canvas); }
+/* EACH SIDE PAYS ITS OWN SAFE-AREA INSET, and the bottom the home indicator's (2026-10-04, reported on an iPhone
+   Duo): this rule outranks both `.ss-content` rules above, and with a flat `24px 16px` the dashboard paid no
+   inset at all — any side inset over 16 pt (a phone on its side, the Duo's camera on one side only) put the text
+   under the camera. Per side, never one value for both: the Duo's two sides differ. */
+.ss-home .ss-content {
+  padding: 24px max(16px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+}
+.ss-home .ss-devices-section, .ss-home .ss-connect-section, .ss-home .ss-preferences-group { margin-bottom: 20px; }
+.ss-home .ss-section-heading { margin: 0 0 9px; padding: 0 14px; }
+.ss-home :is(.ss-section-heading h2, .ss-connect-section h2, .ss-group-heading, .ss-preferences-group h2) {
+  color: var(--muted); font: 600 12px/1.25 -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  letter-spacing: .045em; text-transform: uppercase;
+}
+.ss-home :is(.ss-connect-section h2, .ss-group-heading, .ss-preferences-group h2) { margin: 0 0 9px; padding-left: 14px; }
+.ss-home .ss-devices-section .ss-device-list { background: var(--settings-row); }
+.ss-home .ss-devices-section #home-this-mac:not([hidden]) { border-color: var(--settings-separator); }
+.ss-home .ss-device { min-height: 64px; padding: 10px 14px; gap: 12px; border-color: var(--settings-separator); }
+.ss-home .ss-device-icon { width: 32px; }
+.ss-home .ss-device-icon svg { width: 26px; height: 26px; }
+.ss-home .ss-device-name { font-size: 16px; font-weight: 400; line-height: 1.3; }
+.ss-home .ss-device-state { font-size: 12px; line-height: 1.4; }
+.ss-home .ss-device .ss-connect-label, .ss-home .ss-device .row-connect {
+  min-height: 44px; padding: 0 8px; border: 0; background: transparent;
+  color: var(--muted); font: 500 15px -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+.ss-home .ss-device .row-connect:hover { background: transparent; color: var(--text); }
+.ss-home .ss-quick {
+  min-height: 56px; padding: 6px; gap: 4px; border: 1px solid #ffffff08;
+  border-radius: 12px; background: var(--tabbar);
+}
+.ss-home .ss-quick #home-input {
+  flex: 1 1 0; width: 0; min-width: 0; min-height: 42px; padding: 9px 10px;
+  background: transparent; border: 0; border-radius: 0; text-align: left;
+  font: 400 15px -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+.ss-home .ss-quick #home-input::placeholder { color: var(--faint); opacity: 1; }
+.ss-home .ss-quick #home-connect {
+  width: auto; flex: none; min-height: 40px; padding: 0 16px; border: 0;
+  border-radius: 8px; background: var(--settings-row); color: var(--text);
+  font: 500 14px -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+.ss-home .ss-quick #home-connect:hover { background: #3b3a3b; opacity: 1; }
+.ss-home .ss-quick #home-scan {
+  display: grid; place-items: center; width: 40px; height: 42px; min-height: 42px;
+  flex: none; padding: 0; border: 0; border-radius: 8px; background: transparent; color: var(--muted);
+}
+.ss-home .ss-quick #home-scan svg { width: 20px; height: 20px; }
+.ss-home .ss-quick #home-scan:hover { color: var(--text); background: #ffffff06; }
+.ss-home #home-lead > .ss-section-heading {
+  min-height: 64px; padding: 10px 14px; border: 0; border-radius: 12px;
+  background: var(--settings-row); gap: 12px;
+}
+.ss-home #home-lead button { min-height: 44px; border: 0; background: transparent; padding: 0 8px; font-size: 15px; color: var(--muted); }
+.ss-home #home-lead button:hover { color: var(--text); }
+.ss-home .ss-settings h1 { font-size: 20px; font-weight: 600; letter-spacing: -.02em; margin: 0 0 24px; }
+.ss-home .ss-settings-row {
+  min-height: 64px; margin: 0; padding: 10px 14px; gap: 12px;
+  background: var(--settings-row); border-bottom: 1px solid var(--settings-separator);
+  font-size: 16px; font-weight: 400; line-height: 1.3;
+}
+.ss-home .ss-settings-row small { font-size: 12px; line-height: 1.4; margin-top: 4px; }
+.ss-home .ss-preferences-group > .ss-settings-row:nth-child(2) { border-radius: 12px 12px 0 0; }
+.ss-home .ss-preferences-group > .ss-settings-row:last-child { border-radius: 0 0 12px 12px; border-bottom: 0; }
+.ss-home #home-settings-extra > .ss-settings-row { border-radius: 12px; margin-bottom: 20px; border: 0; }
+.ss-home .ss-settings-row input[type=checkbox] {
+  appearance: none; -webkit-appearance: none; width: 38px; height: 22px; min-width: 38px;
+  flex: none; padding: 0; margin: 11px 3px; border: 0; border-radius: 12px; cursor: pointer;
+  background: radial-gradient(circle, var(--muted) 0 8px, transparent 8.5px) 3px center / 16px 16px no-repeat, #ffffff28;
+}
+.ss-home .ss-settings-row input[type=checkbox]:checked {
+  background: radial-gradient(circle, var(--tabbar) 0 8px, transparent 8.5px) calc(100% - 3px) center / 16px 16px no-repeat, #ffffffdf;
+}
+.ss-home .ss-settings-note { font-size: 12px; line-height: 1.4; padding: 0 14px; }
+.ss-home .ss-settings-e2e { margin-bottom: 20px; }
+.ss-home .ss-settings-e2e h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .045em; padding-left: 14px; margin: 0 0 9px; color: var(--muted); }
+.ss-home .ss-settings-e2e > p { padding: 14px; border-radius: 12px; background: var(--settings-row); }
+.ss-home .share-card { padding: 14px; border: 0; border-radius: 12px; background: var(--settings-row); }
+.ss-home .ss-device .ss-device-state:not(.offline) { color: var(--muted); }
+.ss-home .ss-settings-e2e:has(.ss-settings-row:not([hidden])) > p { border-radius: 12px 12px 0 0; border-bottom: 1px solid var(--settings-separator); }
+.ss-home .ss-settings-e2e .ss-settings-row { border-radius: 0 0 12px 12px; border-bottom: 0; }
+.ss-home #e2e-settings-device { background: var(--settings-canvas); border: 0; border-radius: 8px; }
+/* Heading actions must not stretch the caption row beyond the other section titles. */
+.ss-home .ss-devices-section .ss-section-heading button {
+  min-height: 0; padding: 0; font-size: 12px; line-height: 15px;
+}
+.ss-home .ss-devices-section .ss-section-heading :is(#home-refresh, #home-heading-actions) {
+  display: flex; align-items: center;
+}
+.ss-home .ss-devices-section #home-refresh button {
+  display: grid; place-items: center; width: 16px; height: 15px;
+  font-size: 0; position: relative;
+}
+.ss-home #home-refresh button::before {
+  content: ""; width: 16px; height: 16px; background: currentColor; transform: translate(-2px, -1px);
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M16 6A7 7 0 1 0 17 12M12 6h4V2' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.ss-home #home-refresh button::after { content: ""; position: absolute; inset: -7px; }
+.ss-home .ss-devices-section #home-add-device {
+  text-transform: uppercase; text-decoration: underline; text-underline-offset: 3px;
+  letter-spacing: .045em; font-weight: 400;
+}
+
+.ss-home .ss-devices-section .ss-heading-label { gap: 10px; }
+
+/* Terminal-first home: local work leads; remote connections are an optional second chapter. */
+.ss-home #home-devices > .ss-content { max-width: 760px; padding-top: 24px; padding-bottom: 24px; }
+.ss-home #home-devices { font-size: 14px; line-height: 1.5; }
+.ss-home .ss-local-section { margin-bottom: 24px; }
+.ss-home .ss-local-intro { padding: 0 8px; }
+.ss-home .ss-eyebrow { display: block; color: var(--muted); font-size: 12px; font-weight: 500; margin-bottom: 10px; }
+.ss-home .ss-local-intro h1, .ss-home #home-devices .ss-intro h1 {
+  margin: 0 0 10px; font-size: 26px; font-weight: 600; line-height: 1.2; letter-spacing: -.035em;
+}
+.ss-home .ss-local-intro > p, .ss-home #home-devices .ss-intro > p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.5; }
+.ss-home #home-this-mac { margin-top: 18px; border: 1px solid #ffffff0a; border-radius: 14px; background: var(--settings-row); }
+.ss-home #home-this-mac .ss-device { min-height: 80px; padding: 16px; border: 0; gap: 14px; }
+.ss-home #home-this-mac .ss-device-icon { display: grid; place-items: center; width: 38px; height: 38px; flex: none; color: var(--text); }
+.ss-home #home-this-mac .ss-device-name { font-size: 15px; font-weight: 600; }
+.ss-home #home-this-mac .ss-device-state { font-size: 12px; margin-top: 3px; }
+.ss-home #home-this-mac .ss-connect-label {
+  min-width: 116px; min-height: 38px; padding: 8px 14px; border-radius: 8px;
+  background: #e5e3e5; color: #262526; font-size: 13px; font-weight: 600; line-height: 1.4;
+}
+.ss-home #home-this-mac .ss-connect-label:hover { background: #fff; color: #262526; }
+.ss-home .ss-local-note { color: var(--faint); font-size: 12px; margin: 10px 8px 0; }
+.ss-home .ss-remote-intro { margin: 0 8px 20px; padding-top: 22px; border-top: 1px solid var(--settings-separator); }
+.ss-home .ss-remote-intro h2 { font-size: 17px; line-height: 1.3; font-weight: 600; letter-spacing: -.02em; margin: 0 0 5px; }
+.ss-home .ss-remote-intro p { color: var(--muted); font-size: 13px; line-height: 1.5; margin: 0; }
+[data-dashboard-surface="browser"] .ss-remote-intro, [data-dashboard-surface="app-client"] .ss-remote-intro { display: none; }
+.ss-home #home-devices :is(.ss-section-heading h2, .ss-connect-section h2, .ss-group-heading) {
+  font-size: 13px; line-height: 1.4; font-weight: 600; letter-spacing: 0; text-transform: none;
+}
+.ss-home #home-devices .ss-section-heading { padding: 0 8px; margin-bottom: 10px; }
+.ss-home #home-devices :is(.ss-connect-section h2, .ss-group-heading) { padding-left: 8px; margin-bottom: 6px; }
+.ss-home #home-devices :is(.ss-devices-section, .ss-connect-section) { margin-bottom: 24px; }
+.ss-home #home-devices .ss-device-list { border-radius: 12px; overflow: hidden; }
+.ss-home #home-devices #home-device-list .ss-device { min-height: 68px; padding: 12px 16px; }
+.ss-home #home-devices #home-device-list .ss-device-name { font-size: 14px; font-weight: 500; }
+.ss-home #home-devices #home-device-list .ss-connect-label { font-size: 13px; }
+.ss-home #home-devices .ss-device-message { margin: 0; padding: 16px 16px 8px; font-size: 13px; line-height: 1.55; color: var(--muted); }
+.ss-home #home-devices .device-list-action { min-height: 40px; margin: 4px 16px 16px; padding: 7px 12px; font-size: 13px; border-radius: 8px; }
+.ss-home #home-devices .ss-devices-section #home-add-device { font-size: 12px; text-transform: none; text-decoration: none; letter-spacing: 0; }
+.ss-home #home-devices .ss-section-description { color: var(--muted); font-size: 12px; line-height: 1.55; margin: 0 8px 12px; }
+.ss-home .ss-sharing-card { display: flex; align-items: center; gap: 16px; padding: 16px; border-radius: 12px; background: var(--settings-row); }
+.ss-home .ss-sharing-card > div { flex: 1; min-width: 0; }
+.ss-home .ss-sharing-title { font-size: 14px; font-weight: 500; }
+.ss-home #home-lead .ss-sharing-card .ss-device-state { max-width: none; margin: 4px 0 0; font-size: 12px; line-height: 1.5; }
+.ss-home #home-lead .ss-sharing-card button { min-height: 40px; font-size: 13px; color: var(--text); padding: 7px 10px; border: 1px solid #ffffff16; border-radius: 8px; }
+.ss-home #home-lead .ss-sharing-card button:hover { background: #ffffff08; }
+.ss-home .ss-remote-setup { margin: 12px 8px 0; color: var(--muted); font-size: 12px; }
+.ss-home .ss-remote-setup > summary { cursor: pointer; padding: 8px 0; width: fit-content; }
+.ss-home .ss-remote-setup > summary:hover { color: var(--text); }
+.ss-home #home-devices .ss-remote-setup .ss-section-description { margin: 8px 0 12px; }
+.ss-home .ss-remote-setup .e2e-row { margin: 0; font-size: 12px; gap: 8px; }
+.ss-home #home-lead .ss-remote-setup button { min-height: 32px; padding: 6px 10px; font-size: 12px; border: 1px solid #ffffff16; border-radius: 7px; }
+.ss-home #home-devices button:focus-visible, .ss-home .ss-remote-setup summary:focus-visible { outline: 2px solid var(--muted); outline-offset: 3px; }
+@media (max-width: 420px) {
+  .ss-home #home-devices > .ss-content { padding-top: 24px; }
+  .ss-home .ss-sharing-card { flex-wrap: wrap; gap: 12px; }
+  .ss-home .ss-sharing-card > div { flex-basis: 100%; }
+}
+
+/* Small heading actions retain a comfortable hit area without crowding their captions. */
+.ss-home #home-add-device { position: relative; }
+.ss-home #home-add-device::after { content: ""; position: absolute; inset: -14px -6px; }
+
+/* One remote-access identity enables both directions; setup sits above the two capabilities. */
+.ss-home .ss-remote-signin { margin-bottom: 24px; padding: 16px; border: 1px solid #ffffff10; border-radius: 12px; background: var(--settings-row); }
+.ss-home .ss-remote-signin h3 { margin: 0 0 8px; font-size: 14px; line-height: 1.4; font-weight: 600; }
+.ss-home #home-devices .ss-remote-signin .ss-device-message { padding: 0; }
+.ss-home #home-devices .ss-remote-signin .device-list-action { margin: 14px 0 0; }
+
+/* The shared list is an unboxed stack inside the setup card. Its outer card owns the corners. */
+.ss-home #home-devices .ss-remote-signin #home-device-list { border-radius: 0; overflow: visible; }
+.ss-home .ss-remote-signin #home-heading-actions:not(:empty) { margin-top: 12px; }
+.ss-home .ss-remote-signin #home-add-device { min-height: 40px; padding: 7px 12px; border: 1px solid var(--border2); border-radius: 8px; background: var(--surface2); }
+
+/* Home uses one compact card pattern and a single type scale. */
+.ss-home #home-devices > .ss-content { padding-top: 24px; padding-bottom: 24px; }
+.ss-home .ss-local-intro h1, .ss-home #home-devices .ss-intro h1 { font-size: 24px; line-height: 1.25; margin-bottom: 0; }
+.ss-home #home-this-mac { margin-top: 20px; border-radius: 12px; }
+.ss-home #home-this-mac .ss-device { min-height: 76px; padding: 16px; }
+.ss-home #home-this-mac .ss-device-name, .ss-home .ss-remote-signin h3, .ss-home .ss-sharing-title {
+  margin: 0; font-size: 14px; line-height: 1.45; font-weight: 600; letter-spacing: 0; text-transform: none;
+}
+.ss-home #home-this-mac .ss-device-state, .ss-home #home-devices .ss-device-message, .ss-home #home-lead .ss-sharing-card .ss-device-state {
+  font-size: 13px; line-height: 1.5; margin-top: 4px;
+}
+.ss-home .ss-remote-intro { border: 0; padding-top: 0; margin: 0 8px 10px; }
+.ss-home .ss-remote-intro h2 { font-size: 13px; line-height: 1.5; font-weight: 500; color: var(--muted); margin: 0; letter-spacing: 0; }
+.ss-home .ss-remote-signin, .ss-home .ss-sharing-card { background: var(--settings-row); border: 1px solid #ffffff0a; border-radius: 12px; padding: 16px; }
+.ss-home .ss-remote-signin { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 20px; margin-bottom: 12px; }
+.ss-home .ss-remote-signin h3 { grid-column: 1; grid-row: 1; align-self: end; }
+.ss-home #home-remote-signin-slot, .ss-home .ss-remote-signin #home-device-list { display: contents; }
+.ss-home #home-devices .ss-remote-signin .ss-device-message { grid-column: 1; grid-row: 2; }
+.ss-home #home-devices .ss-remote-signin .device-list-action { grid-column: 2; grid-row: 1 / span 2; align-self: center; margin: 0; }
+.ss-home .ss-remote-signin #home-heading-actions { grid-column: 2; grid-row: 1 / span 2; align-self: center; margin-top: 0; }
+.ss-home .ss-sharing-card { gap: 20px; }
+.ss-home #home-devices :is(.device-list-action, #door-share) { min-height: 40px; border-radius: 8px; font-size: 13px; line-height: 1.4; font-weight: 500; white-space: nowrap; }
+@media (max-width: 480px) {
+  .ss-home .ss-remote-signin { grid-template-columns: 1fr; }
+  .ss-home #home-devices .ss-remote-signin .device-list-action, .ss-home .ss-remote-signin #home-heading-actions { grid-column: 1; grid-row: 3; justify-self: start; margin-top: 14px; }
+}
+
+/* Home and Settings use the same inset section captions. */
+.ss-home .ss-local-intro { padding: 0; }
+.ss-home #home-devices .ss-intro { margin: 0; }
+.ss-home #home-this-mac { margin-top: 0; }
+.ss-home .ss-remote-intro { margin: 0; }
+
+/* Local launch responds to the press itself; opening does not alter the button. */
+.ss-home #home-this-mac .ss-connect-label { transition: background 120ms ease; }
+
+/* Shared by dashboards, dialogs and embedded clients: press feedback changes color only. */
+button:active:not(:disabled) { filter: brightness(1.25); }
+
+/* Settings explains outcomes first, with connection identifiers available on demand. */
+.ss-home #home-settings .ss-content { max-width: 760px; padding-top: 24px; }
+.ss-home #home-settings h1 { font-size: 18px; line-height: 1.4; font-weight: 600; margin: 0 8px 24px; }
+.ss-home #home-settings :is(.ss-preferences-group, .ss-settings-e2e, .ss-settings-identity) { margin: 0 0 24px; }
+.ss-home #home-settings h2,
+.ss-home #home-devices .ss-local-intro h1,
+.ss-home #home-devices .ss-intro h1,
+.ss-home #home-devices .ss-remote-intro h2 { margin: 0 12px 10px; padding: 0; font-size: 14px; line-height: 20px; font-weight: 600; letter-spacing: -.01em; text-transform: none; color: #dedee0; }
+.ss-home #home-settings .ss-settings-row { padding: 14px 16px; font-size: 14px; line-height: 1.45; min-height: 76px; }
+.ss-home #home-settings .ss-settings-row small { margin-top: 4px; font-size: 13px; line-height: 1.5; max-width: 48ch; }
+.ss-home #home-settings label.ss-settings-row { border-radius: 0; }
+.ss-home #home-settings label.ss-settings-row:first-of-type { border-radius: 12px 12px 0 0; }
+.ss-home #home-settings label.ss-settings-row:last-of-type { border-radius: 0 0 12px 12px; border-bottom: 0; }
+.ss-home #home-settings .ss-settings-note { margin: 10px 8px 0; padding: 0; font-size: 12px; line-height: 1.5; color: var(--muted); }
+.ss-home #home-settings .ss-settings-link { margin: 8px 0 0; min-height: 40px; padding: 8px; background: transparent; border: 0; font-size: 13px; color: var(--text); }
+.ss-home #home-settings .ss-settings-card { padding: 16px; border: 1px solid #ffffff0a; border-radius: 12px; background: var(--settings-row); }
+.ss-home #home-settings .ss-settings-card p { margin: 0; padding: 0; background: none; font-size: 13px; line-height: 1.5; color: var(--text); }
+.ss-home #home-settings .ss-settings-account { display: flex; gap: 16px; align-items: center; }
+.ss-home #home-settings .ss-settings-account p { flex: 1; }
+.ss-home #home-settings .ss-settings-account button { flex: none; }
+.ss-home #home-settings .ss-settings-card .ss-settings-help { margin-top: 10px; color: var(--muted); }
+.ss-home #home-settings button { min-height: 40px; font-size: 13px; border-radius: 8px; }
+.ss-home #home-settings .ss-settings-details { margin-top: 16px; border-top: 1px solid var(--settings-separator); padding-top: 8px; font-size: 12px; color: var(--muted); }
+.ss-home #home-settings .ss-settings-details summary { cursor: pointer; width: fit-content; padding: 8px 0; }
+.ss-home #home-settings .ss-settings-details .ss-settings-row { display: flex; flex-direction: column; align-items: stretch; gap: 8px; background: transparent; padding: 12px 0 0; border: 0; }
+.ss-home #home-settings #e2e-settings-device { max-width: none; width: 100%; background: var(--settings-canvas); }
+.ss-home #home-settings .ss-settings-details .e2e-setup-identity { margin-top: 8px; width: 100%; word-break: break-all; }
+.ss-home #home-settings .e2e-row { margin: 12px 0 0; font-size: 12px; }
+.ss-home #home-settings .e2e-setup-actions { margin-top: 12px; }
+@media (max-width: 420px) { .ss-home #home-settings .ss-settings-account { align-items: flex-start; flex-direction: column; gap: 12px; } }
+
+/* Match the macOS reference: soft groups, prominent captions, inset dividers, quiet controls. */
+.ss-home #home-devices .ss-remote-group,
+.ss-home #home-this-mac,
+.ss-home #home-settings .ss-settings-card {
+  background: var(--settings-row); border: 0; border-radius: 12px;
+}
+.ss-home .ss-local-section,
+.ss-home #home-settings :is(.ss-preferences-group, .ss-settings-e2e, .ss-settings-identity) { margin-bottom: 28px; }
+.ss-home #home-devices .ss-remote-group > .ss-remote-signin,
+.ss-home #home-devices .ss-remote-group .ss-sharing-card {
+  margin: 0; padding: 14px; background: transparent; border: 0; border-radius: 0;
+}
+.ss-home #home-devices .ss-remote-group #home-lead:has(.ss-sharing-section) { border: 0; position: relative; }
+.ss-home #home-devices .ss-remote-group #home-lead:has(.ss-sharing-section)::before {
+  content: ""; position: absolute; top: 0; left: 14px; right: 14px; height: 1px; background: var(--settings-separator);
+}
+.ss-home #home-devices .ss-remote-group #home-macs-section { margin: 0; padding: 14px 0 0; }
+.ss-home #home-devices .ss-remote-group #home-macs-section .ss-section-heading { padding: 0 14px; }
+.ss-home #home-devices .ss-remote-group #home-macs-section .ss-device-list { background: transparent; border-radius: 0; }
+.ss-home #home-devices .ss-remote-group #home-device-list .ss-device { padding: 12px 14px; border-bottom: 0; position: relative; }
+.ss-home #home-this-mac .ss-device { min-height: 68px; padding: 12px 14px; }
+.ss-home #home-settings label.ss-settings-row { min-height: 68px; padding: 12px 14px; border: 0; position: relative; }
+.ss-home #home-settings label.ss-settings-row:first-of-type { border: 0; border-radius: 12px 12px 0 0; }
+.ss-home #home-settings label.ss-settings-row:last-of-type { border: 0; border-radius: 0 0 12px 12px; }
+.ss-home #home-settings label.ss-settings-row:not(:last-of-type)::after,
+.ss-home #home-devices .ss-remote-group #home-device-list .ss-device:not(:last-child)::after {
+  content: ""; position: absolute; left: 14px; right: 14px; bottom: 0; height: 1px; background: var(--settings-separator);
+}
+.ss-home #home-this-mac .ss-device-name,
+.ss-home .ss-remote-signin h3,
+.ss-home .ss-sharing-title { font-weight: 500; }
+.ss-home #home-settings .ss-settings-card { padding: 14px; }
+.ss-home #home-settings .ss-settings-note { margin-left: 12px; margin-right: 12px; }
+.ss-home #home-devices :is(.device-list-action, #door-share),
+.ss-home #home-settings button:not(.ss-settings-link) {
+  background: #3b3b3d; border: 1px solid transparent; font-weight: 500;
+}
+
+/* macOS reference buttons: compact filled controls, consistent for every page action. */
+.ss-home #home-devices #home-this-mac button,
+.ss-home #home-devices #home-device-list button,
+.ss-home #home-devices #home-lead button,
+.ss-home #home-devices #home-heading-actions button,
+.ss-home #home-settings.ss-page-scroll button {
+  min-height: 26px; padding: 4px 11px; border: 0; border-radius: 6px;
+  background: #39393c; color: #dedee0; font: 400 14px/18px -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  box-shadow: none;
+}
+.ss-home #home-devices #home-this-mac button:hover,
+.ss-home #home-devices #home-device-list button:hover,
+.ss-home #home-devices #home-lead button:hover,
+.ss-home #home-devices #home-heading-actions button:hover,
+.ss-home #home-settings.ss-page-scroll button:hover { background: #39393c; }
+.ss-home #home-settings.ss-page-scroll button.danger { color: var(--red); }
+
+.ss-home #home-devices #home-this-mac button:active:not(:disabled),
+.ss-home #home-devices #home-device-list button:active:not(:disabled),
+.ss-home #home-devices #home-lead button:active:not(:disabled),
+.ss-home #home-devices #home-heading-actions button:active:not(:disabled),
+.ss-home #home-settings.ss-page-scroll button:active:not(:disabled) {
+  background: #4c4c4f; filter: none;
+}
+
+/* Native-style buttons use the standard arrow, including within embedded clients. */
+button { cursor: default !important; }
+.ss-home #home-settings .ss-settings-title { font-size: 14px; line-height: 1.45; font-weight: 500; }
+.ss-home #home-settings #e2e-settings-group { width: 100%; max-width: none; background: var(--settings-canvas); font-size: 12px; }
+
+/* Supporting text stays with its label; actions occupy the trailing column. */
+.ss-home #home-settings .ss-settings-copy { flex: 1; min-width: 0; }
+.ss-home #home-settings .ss-settings-card .ss-settings-help,
+.ss-home #home-settings .ss-settings-row small { margin-top: 4px; }
+.ss-home #home-settings .ss-settings-account > .e2e-setup-actions { margin: 0; flex: none; }
+.ss-home #home-settings .ss-settings-details { padding-top: 14px; }
+.ss-home #home-settings .ss-settings-details-title { margin: 0 0 4px; font: 500 13px/1.5 -apple-system, BlinkMacSystemFont, system-ui, sans-serif; color: var(--text); }
+.ss-home #home-settings .ss-preferences-group:has(.ss-settings-action-row) label.ss-settings-row:last-of-type { border-radius: 0; }
+.ss-home #home-settings .ss-settings-action-row { min-height: 68px; padding: 12px 14px; border: 0; border-radius: 0 0 12px 12px; position: relative; }
+.ss-home #home-settings .ss-settings-action-row::before { content: ""; position: absolute; top: 0; left: 14px; right: 14px; height: 1px; background: var(--settings-separator); }
+.ss-home #home-settings .ss-settings-action-row > span { flex: 1; min-width: 0; }
+.ss-home #home-settings .ss-settings-action-row > button { flex: none; }
+
+.ss-home #home-settings .ss-settings-code-row { display: flex; align-items: center; gap: 16px; }
+.ss-home #home-settings .ss-settings-code-row > p { flex: 1; min-width: 0; }
+.ss-home #home-settings #e2e-settings-code-actions { flex: none; }
+.ss-home #home-settings #e2e-adopt { margin: 0; }
+
+.ss-home #home-settings label.ss-settings-row:only-of-type { border-radius: 12px; }
+
+/* Every confirmation and alert shares the Settings control language. */
+.ss-dialog button,
+.ss-home .ss-dialog button {
+  min-height: 26px; padding: 4px 11px; border: 0; border-radius: 6px;
+  background: #39393c; color: #dedee0; font: 400 14px/18px -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  box-shadow: none;
+}
+.ss-dialog button:hover:not(:disabled),
+.ss-home .ss-dialog button:hover:not(:disabled) { background: #39393c; }
+.ss-dialog button:active:not(:disabled),
+.ss-home .ss-dialog button:active:not(:disabled) { background: #4c4c4f; filter: none; }
+.ss-dialog button.danger, .ss-home .ss-dialog button.danger { color: var(--red); }
+.ss-dialog :is(input,select,textarea) { background: var(--settings-row, #2a2a2c); border-color: #ffffff16; border-radius: 6px; font-family: inherit; font-size: 14px; }
+.ss-dialog :is(.ss-profile-identity,.e2e-setup-identity,.identity-compare-code) {
+  display: block; margin: 12px 0 0; padding: 10px 12px; border: 0; border-radius: 8px;
+  background: var(--settings-row, #2a2a2c); color: #dedee0; font-size: 12px; line-height: 1.5; word-break: break-all;
+}
+.ss-dialog.ss-add-device #add-device-field { min-height: 42px; padding: 0; border-radius: 8px; background: var(--settings-row, #2a2a2c); border-color: #ffffff16; }
+.ss-dialog.ss-add-device #add-device-code { min-height: 40px; padding: 8px 12px; font-size: 14px; }
+.ss-dialog.ss-add-device #add-device-error { font-size: 13px; }
+.ss-dialog.ss-add-device #add-device-scan:hover { background: transparent; }
+@media (any-pointer: coarse) { .ss-dialog :is(input,select,textarea) { font-size: 16px; } }

@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "esModuleInterop": true,
+    // The webauthn ceremony suite reads protocol/fixtures/*.json directly; the web package has no
+    // node types, so a JSON module import is the only route to a fixture from here.
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["vite/client", "@webgpu/types"],
+    "baseUrl": ".",
+    "paths": { "@rdev/protocol": ["../protocol/src/index.ts"] }
+  },
+  "include": ["src", "test"]
+}

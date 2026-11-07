@@ -1,0 +1,2 @@
+# The interop aspect generates the modulemap, matching the other C bridges.
+alias(name = "Zstd", actual = "@zstd//:zstd", visibility = ["//visibility:public"])

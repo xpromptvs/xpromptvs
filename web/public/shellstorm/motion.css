@@ -1,0 +1,97 @@
+/* Motion from ShellStorm/style.css. See motion-port.md for source mapping. */
+.row-connect{--connect-rest:#353533;--connect-highlight:#4a4a46}
+[data-connect-quick]{--connect-rest:#484845;--connect-highlight:#5e5e5a}
+/* The busy fill settles after the acknowledgement; hover remains instantaneous. */
+.is-connecting .row-connect,[data-connect-quick].is-busy{
+  background:#2b2b29;border-color:#555552;color:#bebebb;opacity:1;
+}
+.row-connect.connect-morph,[data-connect-quick].connect-morph{min-width:0;white-space:nowrap;overflow:hidden}
+.row-connect .connect-morph-label,[data-connect-quick] .connect-morph-label{
+  display:inline-flex;justify-content:flex-start;gap:0;margin:0;font:inherit;color:inherit;
+}
+.row-connect .connect-morph-label>span,[data-connect-quick] .connect-morph-label>span{display:inline-block;flex-shrink:0;text-align:center;white-space:pre;font:inherit;color:inherit;margin:0}
+
+/* Header debug control; pressed state keeps slow playback visible. */
+.header-actions .debug-slow{flex-shrink:0;padding:6px 10px;border:1px solid #464644;border-radius:6px;color:var(--muted);font:inherit;font-size:12pt;white-space:nowrap}
+.header-actions .debug-slow:hover:where(.mouse-hover *){background:#ffffff08;color:var(--text)}
+.header-actions .debug-slow[aria-pressed="true"]{border-color:#a4d9e080;color:#a4d9e0;background:#a4d9e00a}
+
+/* Connecting stays actionable: the trailing cross cancels the pending session. */
+.is-connecting .row-connect,[data-connect-quick].is-busy{display:inline-flex;align-items:center;justify-content:center;gap:0;cursor:pointer;white-space:nowrap}
+.is-connecting .row-connect:hover:where(.mouse-hover *):not(:disabled),[data-connect-quick].is-busy:hover:where(.mouse-hover *){background:var(--connect-highlight);color:#fff}
+.row-connect .connection-label,[data-connect-quick] .connection-label,
+.row-connect .connection-cancel,[data-connect-quick] .connection-cancel{font:inherit;color:inherit;margin:0}
+.connection-cancel{flex-shrink:0;line-height:1}
+
+/* Grow the label and cancel slot together; neither may push outside the button. */
+.row-connect .connection-label,[data-connect-quick] .connection-label{flex:0 0 auto;overflow:hidden;white-space:nowrap}
+.row-connect .connection-cancel,[data-connect-quick] .connection-cancel{display:inline-block;overflow:hidden;margin-left:9px;text-align:center}
+
+.row-connect .connection-cancel,[data-connect-quick] .connection-cancel{width:16px;height:18px;line-height:1}
+
+/* Pending connections preserve the normal appearance of other online actions. */
+.row-connect.pending-lock:disabled{background:var(--connect-rest);border-color:#5f5f5c;color:#f4f4f2;opacity:1}
+.device-toolbar .device-add.pending-lock:disabled{opacity:1}
+
+.connection-cancel svg{display:block;width:16px;height:18px;flex-shrink:0}
+
+/* Illuminate only the display area; the bezel and stand retain their linework. */
+.ss-device-icon .computer-screen-light,.ss-device-icon .computer-screen-glow{fill:#fff;stroke:none;opacity:0}
+.device-card .ss-device-icon .ui-icon{overflow:visible}
+.ss-device-icon .computer-screen-glow{fill:#fff;transform-box:fill-box;transform-origin:center;transform:scale(1.3182)}
+.is-connecting .ss-device-icon{animation:none}
+.is-lit .computer-screen-light{opacity:1}
+.is-lit .computer-screen-glow{opacity:.6333}
+
+/* Inline layout keeps the cursor attached to every scrambled text update. */
+.pending-label{white-space:pre-wrap}
+.pending-cursor{display:inline-block;position:relative;width:.65em;height:1.1em;margin-left:.22em;vertical-align:-.16em;pointer-events:none;user-select:none}
+
+.pending-cursor-light,.pending-cursor-halo{position:absolute;inset:0;background:#fff}
+.pending-cursor-halo{inset:-.75em;background:var(--ss-cursor-glow-white) center/100% 100% no-repeat;opacity:.35}
+
+/* Keep the status line stable while the reveal starts with empty text. */
+.ss-device-copy .device-state{min-height:1.4em}
+
+.ss-device-copy .device-state:not(.offline){color:#fff}
+
+
+/* Scope the original button declarations above past the app's base control rules. */
+.ss-home .is-connecting .row-connect,.ss-home [data-connect-quick].is-busy {display:inline-flex;align-items:center;justify-content:center;gap:0;background:#2b2b29;border-color:#555552;color:#bebebb;opacity:1;cursor:pointer;white-space:nowrap}
+.ss-home .row-connect.connect-morph,.ss-home [data-connect-quick].connect-morph {min-width:0;overflow:hidden}
+.ss-home .row-connect.pending-lock:disabled {background:var(--surface2);border-color:var(--border2);color:var(--text);opacity:1}
+.ss-home .device-state {display:flex;align-items:center;min-height:1.4em;line-height:1.4;white-space:nowrap}
+.ss-home .pending-label {white-space:pre-wrap}
+.ss-home .ss-device-icon svg {overflow:visible}
+.ss-home .ss-device-icon .computer-screen-light,.ss-home .ss-device-icon .computer-screen-glow {fill:#fff;stroke:none;opacity:0}
+.ss-home .is-lit .computer-screen-light {opacity:1}
+.ss-home .is-lit .computer-screen-glow {opacity:.6333}
+.ss-home .device-card.is-connecting .ss-device-icon {color:var(--muted)}
+.ss-home .is-connecting .ss-device-copy {overflow:visible}
+.ss-home .ss-device .row-connect {min-height:40px;font:inherit;white-space:nowrap}
+.ss-home .ss-quick-status {font-size:16px;min-height:1.4em;margin:-20px 0 26px;color:var(--text)}
+.ss-home .ss-quick-status[hidden] {display:none}
+.ss-home :is(button,a,input,select) {transition:background calc(.15s * var(--motion-scale,1)),color calc(.15s * var(--motion-scale,1)),border-color calc(.15s * var(--motion-scale,1))}
+.ss-home :is(button,a,input,select):is(:hover:where(.mouse-hover *),:focus-visible,:active),.ss-home :is(input,select):focus {transition-duration:0s!important;transition-delay:0s!important}
+/* display:contents preserves the original body flex bands and all fixed viewport geometry at rest. */
+#session {display:contents}
+#session.ss-session-moving {display:flex;flex-direction:column;position:absolute;inset:0;z-index:60;background:var(--app-bg);overflow:hidden}
+#session.ss-session-pending {visibility:hidden}
+.safari-tint {position:fixed;top:0;left:0;width:100vw;height:max(60px,env(safe-area-inset-top,0px));background-color:var(--tabbar);visibility:hidden;pointer-events:none;z-index:1000}
+
+:root[data-theme=light] .ss-home .is-connecting .row-connect,:root[data-theme=light] .ss-home [data-connect-quick].is-busy {background:var(--surface2);border-color:var(--border2);color:var(--muted)}
+
+/* The source is dark-only; use the existing light theme's ink for the same cursor/glow envelopes. */
+:root[data-theme=light] .ss-home .device-state:not(.offline) {color:var(--text)}
+:root[data-theme=light] .ss-home .pending-cursor-light {background:var(--text)}
+:root[data-theme=light] .ss-home .pending-cursor-halo {background-image:var(--ss-cursor-glow-dark)}
+
+.ss-home .device-card { flex-wrap:nowrap; }
+.ss-home .device-state .pending-label { min-width:0; overflow:hidden; white-space:pre; }
+.ss-home .device-state .pending-cursor { flex:none; }
+
+.ss-home .ss-device-name { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+/* Cancel is an available action, not a disabled connection indicator. */
+:root[data-theme] .ss-home button[data-fixed-connect].is-busy { background:var(--surface2); border-color:var(--border2); color:var(--text); opacity:1; cursor:pointer; }
+:root[data-theme] .ss-home button[data-fixed-connect].is-busy:hover:not(:disabled) { background:var(--surface3); color:var(--text); }

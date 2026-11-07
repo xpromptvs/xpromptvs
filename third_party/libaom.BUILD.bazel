@@ -1,0 +1,12 @@
+# LATENT TRAP: third_party/libaom/third_party/highway/hwy/contrib/sort/BUILD (the same
+# file .bazelignore names) makes hwy/contrib/sort/ a Bazel sub-package boundary, so
+# glob(["**"]) below silently DROPS everything under it from all_srcs — Bazel does not
+# error when a glob crosses a package boundary, it just excludes the subtree. Harmless
+# today: libaom's CMakeLists.txt only references top-level third_party/highway/hwy/*.h.
+# If a future libaom bump starts needing Highway's contrib/sort sources, they will be
+# silently missing from the cmake build with nothing naming this as the cause.
+filegroup(
+    name = "all_srcs",
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

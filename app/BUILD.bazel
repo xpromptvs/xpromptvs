@@ -1,0 +1,75 @@
+load("@rules_swift//swift:swift.bzl", "swift_library", "swift_test")
+load("@rules_apple//apple:macos.bzl", "macos_application")
+
+config_setting(
+    name = "release",
+    values = {"compilation_mode": "opt"},
+)
+
+swift_library(
+    name = "ShellstormCore",
+    visibility = ["//visibility:public"],
+    srcs = glob(["Core/*.swift"]),
+    module_name = "ShellstormCore",
+)
+
+swift_test(
+    name = "ShellstormCoreTests",
+    data = ["//protocol:fixtures"],
+    srcs = glob(["Tests/*.swift"]),
+    module_name = "ShellstormCoreTests",
+    deps = [":ShellstormCore"],
+)
+
+swift_library(
+    name = "ShellstormAppLib",
+    srcs = glob(["Sources/*.swift"]),
+    module_name = "ShellstormApp",
+    copts = select({
+        ":release": [],
+        "//conditions:default": ["-DRDEV_DEV_BUILD"],
+    }),
+    deps = [
+        ":ShellstormCore",
+        "//host/RdevAppHost:RdevAppHost",
+        "//host/RdevCore:RdevCore",
+        "//host/RdevHostKit:RdevHostKit",
+    ],
+)
+
+macos_application(
+    name = "Xpromptvs",
+    bundle_id = "ai.xpromptvs.development",
+    bundle_name = "Xpromptvs Development",
+    codesignopts = ["--options=runtime"],
+    entitlements = select({
+        ":release": "Xpromptvs.entitlements",
+        "//conditions:default": ":dev_entitlements",
+    }),
+    entitlements_validation = "error",
+    infoplists = ["Info.plist"],
+    minimum_os_version = "26.0",
+    tags = ["manual"],
+    deps = [":ShellstormAppLib"],
+)
+
+genrule(
+    name = "dev_entitlements",
+    srcs = ["Xpromptvs.entitlements"],
+    outs = ["Xpromptvs-dev.entitlements"],
+    cmd = "cp $< $@ && chmod u+w $@ && /usr/libexec/PlistBuddy -c \"Add :com.apple.security.get-task-allow bool true\" $@",
+)
+
+swift_test(
+    name = "ConnectAttemptsTests",
+    srcs = ["Sources/ConnectAttempts.swift", "ConnectionTests/ConnectAttemptsTests.swift"],
+    module_name = "ConnectAttemptsTests",
+    deps = [":ShellstormCore"],
+)
+
+swift_test(
+    name = "NativeSimulatorAppTests",
+    srcs = glob(["AppTests/*.swift"]) + ["Sources/SimulatorMetalView.swift", "Sources/SimulatorMetalRenderer.swift", "Sources/NativeSimulatorInput.swift"],
+    module_name = "NativeSimulatorAppTests",
+    deps = [":ShellstormCore", "//host/RdevCore:RdevCore", "//host/RdevHostKit:RdevHostKit"],
+)

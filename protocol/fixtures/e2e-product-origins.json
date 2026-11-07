@@ -1,0 +1,78 @@
+{
+  "_comment": [
+    "\u00a710.1's policy for the product's domain (2026-10-06): the client moved to https://app.xpromptvs.ai and the",
+    "apex became the landing page. Passkeys stay registered to the relying party xpromptvs.ai \u2014 a page on a",
+    "subdomain may use its registrable parent \u2014 and EVERY verifier accepts BOTH origins, for good: a grant",
+    "signed at the apex carries https://xpromptvs.ai in its clientDataJSON forever, one signed on app carries",
+    "https://app.xpromptvs.ai, and the Mac's native ceremony reports https://xpromptvs.ai. Anywhere else",
+    "(localhost, a LAN dev host) the policy is the origin's own host and the origin alone.",
+    "Asserted by web/test/product-origin.test.ts and RdevCoreTests' E2EOriginTests; the Worker's",
+    "E2E_RP_ID/E2E_ORIGINS (control-plane/wrangler.jsonc) state the same product policy."
+  ],
+  "rp_id": "xpromptvs.ai",
+  "origins": [
+    "https://xpromptvs.ai",
+    "https://app.xpromptvs.ai"
+  ],
+  "app_origin": "https://app.xpromptvs.ai",
+  "cases": [
+    {
+      "origin": "https://xpromptvs.ai",
+      "rp_id": "xpromptvs.ai",
+      "allowed_origins": [
+        "https://xpromptvs.ai",
+        "https://app.xpromptvs.ai"
+      ],
+      "app_origin": "https://app.xpromptvs.ai"
+    },
+    {
+      "origin": "https://app.xpromptvs.ai",
+      "rp_id": "xpromptvs.ai",
+      "allowed_origins": [
+        "https://xpromptvs.ai",
+        "https://app.xpromptvs.ai"
+      ],
+      "app_origin": "https://app.xpromptvs.ai"
+    },
+    {
+      "origin": "http://localhost:8787",
+      "rp_id": "localhost",
+      "allowed_origins": [
+        "http://localhost:8787"
+      ],
+      "app_origin": "http://localhost:8787"
+    },
+    {
+      "origin": "http://127.0.0.1:5173",
+      "rp_id": "127.0.0.1",
+      "allowed_origins": [
+        "http://127.0.0.1:5173"
+      ],
+      "app_origin": "http://127.0.0.1:5173"
+    },
+    {
+      "origin": "https://notxpromptvs.ai",
+      "rp_id": "notxpromptvs.ai",
+      "allowed_origins": [
+        "https://notxpromptvs.ai"
+      ],
+      "app_origin": "https://notxpromptvs.ai"
+    },
+    {
+      "origin": "https://rdev-control-plane.ali-fareed-alef.workers.dev",
+      "rp_id": "rdev-control-plane.ali-fareed-alef.workers.dev",
+      "allowed_origins": [
+        "https://rdev-control-plane.ali-fareed-alef.workers.dev"
+      ],
+      "app_origin": "https://rdev-control-plane.ali-fareed-alef.workers.dev"
+    },
+    {
+      "origin": "https://staging.xpromptvs.ai",
+      "rp_id": "staging.xpromptvs.ai",
+      "allowed_origins": [
+        "https://staging.xpromptvs.ai"
+      ],
+      "app_origin": "https://staging.xpromptvs.ai"
+    }
+  ]
+}

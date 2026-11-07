@@ -1,0 +1,316 @@
+{
+  "version": 1,
+  "valid": [
+    {
+      "name": "capabilities-v1",
+      "message": {
+        "t": "source-input-capabilities",
+        "v": 1
+      }
+    },
+    {
+      "name": "focus-window",
+      "message": {
+        "t": "source-focus",
+        "source": "win:11",
+        "request": "focus-a"
+      }
+    },
+    {
+      "name": "focus-terminal",
+      "message": {
+        "t": "source-focus",
+        "source": null,
+        "request": "terminal"
+      }
+    },
+    {
+      "name": "touch",
+      "message": {
+        "t": "source-input",
+        "source": "win:11",
+        "lease": "lease-a",
+        "event": {
+          "t": "touch",
+          "x": 0.25,
+          "y": 0.75,
+          "phase": "down",
+          "button": "right"
+        }
+      }
+    },
+    {
+      "name": "hover",
+      "message": {
+        "t": "source-input",
+        "source": "win:11",
+        "lease": "lease-a",
+        "event": {
+          "t": "hover",
+          "x": 0.25,
+          "y": 0.75
+        }
+      }
+    },
+    {
+      "name": "scroll",
+      "message": {
+        "t": "source-input",
+        "source": "win:11",
+        "lease": "lease-a",
+        "event": {
+          "t": "scroll",
+          "x": 0.25,
+          "y": 0.75,
+          "dx": 0,
+          "dy": 10,
+          "unit": "px",
+          "mods": 1
+        }
+      }
+    },
+    {
+      "name": "scroll-fling",
+      "message": {
+        "t": "source-input",
+        "source": "win:11",
+        "lease": "lease-a",
+        "event": {
+          "t": "scroll-fling",
+          "x": 0.25,
+          "y": 0.75,
+          "vx": 0,
+          "vy": 100
+        }
+      }
+    },
+    {
+      "name": "win-key",
+      "message": {
+        "t": "source-input",
+        "source": "win:11",
+        "lease": "lease-a",
+        "event": {
+          "t": "win-key",
+          "down": true,
+          "code": "KeyA",
+          "key": "a",
+          "mods": 0
+        }
+      }
+    },
+    {
+      "name": "win-keys-release",
+      "message": {
+        "t": "source-input",
+        "source": "win:11",
+        "lease": "lease-a",
+        "event": {
+          "t": "win-keys-release"
+        }
+      }
+    },
+    {
+      "name": "sim-touch",
+      "message": {
+        "t": "source-input",
+        "source": "sim:00000000-0000-0000-0000-000000000001",
+        "lease": "lease-a",
+        "event": {
+          "t": "sim-touch",
+          "phase": "down",
+          "points": [
+            {
+              "x": 0.25,
+              "y": 0.75
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "sim-text",
+      "message": {
+        "t": "source-input",
+        "source": "sim:00000000-0000-0000-0000-000000000001",
+        "lease": "lease-a",
+        "event": {
+          "t": "sim-text",
+          "text": "hello"
+        }
+      }
+    },
+    {
+      "name": "native-scroll-begin",
+      "message": {
+        "t": "source-input",
+        "source": "win:11",
+        "lease": "lease-a",
+        "event": {
+          "t": "scroll-gesture",
+          "phase": "begin",
+          "x": 0.25,
+          "y": 0.5,
+          "vx": 0,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "native-scroll-end",
+      "message": {
+        "t": "source-input",
+        "source": "win:11",
+        "lease": "lease-a",
+        "event": {
+          "t": "scroll-gesture",
+          "phase": "end",
+          "x": 0.25,
+          "y": 0.5,
+          "vx": 300,
+          "vy": -500
+        }
+      }
+    },
+    {
+      "name": "native-scroll-cancel",
+      "message": {
+        "t": "source-input",
+        "source": "win:11",
+        "lease": "lease-a",
+        "event": {
+          "t": "scroll-gesture",
+          "phase": "cancel",
+          "x": 0.25,
+          "y": 0.5,
+          "vx": 0,
+          "vy": 0
+        }
+      }
+    }
+  ],
+  "invalid": [
+    {
+      "name": "capability-no-version",
+      "message": {
+        "t": "source-input-capabilities"
+      }
+    },
+    {
+      "name": "capability-boolean-version",
+      "message": {
+        "t": "source-input-capabilities",
+        "v": true
+      }
+    },
+    {
+      "name": "focus-missing-source",
+      "message": {
+        "t": "source-focus",
+        "request": "a"
+      }
+    },
+    {
+      "name": "focus-empty-request",
+      "message": {
+        "t": "source-focus",
+        "source": "win:11",
+        "request": ""
+      }
+    },
+    {
+      "name": "input-empty-lease",
+      "message": {
+        "t": "source-input",
+        "source": "win:11",
+        "lease": "",
+        "event": {
+          "t": "win-keys-release"
+        }
+      }
+    },
+    {
+      "name": "nested-control",
+      "message": {
+        "t": "source-input",
+        "source": "win:11",
+        "lease": "lease-a",
+        "event": {
+          "t": "claim-control"
+        }
+      }
+    },
+    {
+      "name": "nested-envelope",
+      "message": {
+        "t": "source-input",
+        "source": "win:11",
+        "lease": "lease-a",
+        "event": {
+          "t": "source-input",
+          "source": "win:12",
+          "lease": "lease-b",
+          "event": {
+            "t": "win-keys-release"
+          }
+        }
+      }
+    },
+    {
+      "name": "boolean-coordinate",
+      "message": {
+        "t": "source-input",
+        "source": "win:11",
+        "lease": "lease-a",
+        "event": {
+          "t": "hover",
+          "x": true,
+          "y": 0.5
+        }
+      }
+    },
+    {
+      "name": "native-scroll-unknown-phase",
+      "message": {
+        "t": "source-input",
+        "source": "win:11",
+        "lease": "lease-a",
+        "event": {
+          "t": "scroll-gesture",
+          "phase": "move",
+          "x": 0.5,
+          "y": 0.5
+        }
+      }
+    }
+  ],
+  "replies": [
+    {
+      "t": "source-input-capabilities",
+      "v": 1
+    },
+    {
+      "t": "source-focus",
+      "source": "win:11",
+      "request": "focus-a",
+      "lease": "lease-a"
+    },
+    {
+      "t": "source-focus",
+      "source": null,
+      "request": "terminal"
+    },
+    {
+      "t": "source-focus",
+      "source": "win:11",
+      "request": "failed",
+      "error": "focus-unavailable"
+    },
+    {
+      "t": "source-focus",
+      "source": "win:999",
+      "request": "closed",
+      "error": "source-unavailable"
+    }
+  ]
+}
